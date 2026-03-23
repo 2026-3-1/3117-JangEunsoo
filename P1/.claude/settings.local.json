@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /d/devlearn/P1/frontend -type f \\\\\\(-name *.json -o -name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js \\\\\\))",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
