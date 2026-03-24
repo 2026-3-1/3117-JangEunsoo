@@ -1,8 +1,4 @@
-import axios from 'axios'
-
-const api = axios.create({
-  baseURL: '/api',
-})
+import api from './index'
 
 export interface AuthResponse {
   accessToken: string
