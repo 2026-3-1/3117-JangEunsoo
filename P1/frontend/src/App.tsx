@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import CoursesPage from './pages/CoursesPage'
+import CourseDetailPage from './pages/CourseDetailPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -15,6 +16,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CoursesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/courses/:id"
+          element={
+            <ProtectedRoute>
+              <CourseDetailPage />
             </ProtectedRoute>
           }
         />
