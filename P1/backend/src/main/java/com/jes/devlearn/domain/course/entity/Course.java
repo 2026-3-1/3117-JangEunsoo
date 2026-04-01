@@ -27,15 +27,29 @@ public class Course {
     @Column(nullable = false)
     private String title;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private String difficulty;
+
+    @Column(name = "instructor_name")
+    private String instructorName;
+
     private LocalDateTime deletedAt;
 
-    public Course(Long categoryId, String title) {
+    public Course(Long categoryId, String title, String description, String difficulty, String instructorName) {
         this.categoryId = categoryId;
         this.title = title;
+        this.description = description;
+        this.difficulty = difficulty;
+        this.instructorName = instructorName;
     }
 
-    public void update(Long categoryId, String title) {
+    public void update(Long categoryId, String title, String description, String difficulty, String instructorName) {
         this.categoryId = categoryId;
         this.title = title;
+        this.description = description;
+        this.difficulty = difficulty;
+        this.instructorName = instructorName;
     }
 }

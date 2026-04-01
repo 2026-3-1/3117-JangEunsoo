@@ -31,4 +31,20 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(GlobalApiResponse.success(categoryService.createCategory(dto)));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<GlobalApiResponse<CategoryResponseDTO>> updateCategory(
+            @PathVariable Long id,
+            @Valid @RequestBody CategoryCreateRequestDTO dto
+    ) {
+        return ResponseEntity.ok(GlobalApiResponse.success(categoryService.updateCategory(id, dto)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<GlobalApiResponse<Void>> deleteCategory(
+            @PathVariable Long id
+    ) {
+        categoryService.deleteCategory(id);
+        return ResponseEntity.ok(GlobalApiResponse.success("카테고리가 삭제되었습니다."));
+    }
 }

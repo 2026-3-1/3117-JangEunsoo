@@ -2,6 +2,7 @@ package com.jes.devlearn.domain.course.controller;
 
 import com.jes.devlearn.domain.course.dto.request.CourseCreateRequestDTO;
 import com.jes.devlearn.domain.course.dto.request.CourseUpdateRequestDTO;
+import com.jes.devlearn.domain.course.dto.response.CourseDetailResponseDTO;
 import com.jes.devlearn.domain.course.dto.response.CoursePageResponseDTO;
 import com.jes.devlearn.domain.course.dto.response.CourseResponseDTO;
 import com.jes.devlearn.domain.course.service.CourseService;
@@ -25,13 +26,15 @@ public class CourseController {
     @GetMapping
     public ResponseEntity<GlobalApiResponse<CoursePageResponseDTO>> getCourses(
             @RequestParam(required = false) Long categoryId,
-            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(required = false) String difficulty,
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 12, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(GlobalApiResponse.success(courseService.getCourses(categoryId, pageable)));
+        return ResponseEntity.ok(GlobalApiResponse.success(courseService.getCourses(categoryId, difficulty, keyword, pageable)));
     }
 
-    @GetMapping("{id}")
-    public ResponseEntity<GlobalApiResponse<CourseResponseDTO>> getCourse(
+    @GetMapping("/{id}")
+    public ResponseEntity<GlobalApiResponse<CourseDetailResponseDTO>> getCourse(
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(GlobalApiResponse.success(courseService.getCourse(id)));
@@ -45,7 +48,7 @@ public class CourseController {
                 .body(GlobalApiResponse.success(courseService.createCourse(dto)));
     }
 
-    @PutMapping("{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<GlobalApiResponse<CourseResponseDTO>> updateCourse(
             @PathVariable Long id,
             @Valid @RequestBody CourseUpdateRequestDTO dto
@@ -53,11 +56,11 @@ public class CourseController {
         return ResponseEntity.ok(GlobalApiResponse.success(courseService.updateCourse(id, dto)));
     }
 
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<GlobalApiResponse<Void>> deleteCourse(
             @PathVariable Long id
     ) {
         courseService.deleteCourse(id);
-        return ResponseEntity.ok(GlobalApiResponse.success("Course deleted successfully."));
+        return ResponseEntity.ok(GlobalApiResponse.success("강의가 삭제되었습니다."));
     }
 }
