@@ -3,6 +3,8 @@ package com.jes.devlearn.domain.enrollment.controller;
 import com.jes.devlearn.domain.enrollment.dto.request.EnrollmentCreateRequestDTO;
 import com.jes.devlearn.domain.enrollment.dto.response.EnrollmentResponseDTO;
 import com.jes.devlearn.domain.enrollment.service.EnrollmentService;
+import com.jes.devlearn.domain.progress.dto.response.ProgressRateResponseDTO;
+import com.jes.devlearn.domain.progress.service.ProgressService;
 import com.jes.devlearn.global.dto.GlobalApiResponse;
 import com.jes.devlearn.global.security.UserPrincipal;
 import jakarta.validation.Valid;
@@ -20,6 +22,7 @@ import java.util.List;
 public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
+    private final ProgressService progressService;
 
     @PostMapping
     public ResponseEntity<GlobalApiResponse<EnrollmentResponseDTO>> enroll(
@@ -35,6 +38,14 @@ public class EnrollmentController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(GlobalApiResponse.success(enrollmentService.getMyEnrollments(principal.getUserId())));
+    }
+
+    @GetMapping("/{id}/progress-rate")
+    public ResponseEntity<GlobalApiResponse<ProgressRateResponseDTO>> getProgressRate(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(GlobalApiResponse.success(progressService.getProgressRate(id, principal.getUserId())));
     }
 
     @DeleteMapping("/{id}")
