@@ -11,6 +11,6 @@ export const login = async (username: string, password: string): Promise<AuthRes
 }
 
 export const signup = async (username: string, password: string): Promise<AuthResponse> => {
-  const { data } = await api.post('/auth/signup', { username, password })
-  return data.data
+  await api.post('/auth/signup', { username, password })
+  return login(username, password)
 }
