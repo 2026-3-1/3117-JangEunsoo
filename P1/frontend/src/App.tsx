@@ -3,6 +3,8 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import CoursesPage from './pages/CoursesPage'
 import CourseDetailPage from './pages/CourseDetailPage'
+import MyCoursesPage from './pages/MyCoursesPage'
+import LearningPage from './pages/LearningPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -24,6 +26,22 @@ function App() {
           element={
             <ProtectedRoute>
               <CourseDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/courses/:id/learn/:enrollmentId"
+          element={
+            <ProtectedRoute>
+              <LearningPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my/courses"
+          element={
+            <ProtectedRoute>
+              <MyCoursesPage />
             </ProtectedRoute>
           }
         />

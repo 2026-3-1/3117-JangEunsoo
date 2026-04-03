@@ -1,9 +1,30 @@
 import api from './index'
 
+export interface LectureResponse {
+  id: number
+  title: string
+  videoUrl: string | null
+  orderNum: number
+}
+
+export interface SectionResponse {
+  id: number
+  title: string
+  orderNum: number
+  lectures: LectureResponse[]
+}
+
 export interface CourseResponse {
   id: number
   categoryId: number
   title: string
+  description: string | null
+  difficulty: string | null
+  instructorName: string | null
+}
+
+export interface CourseDetailResponse extends CourseResponse {
+  sections: SectionResponse[]
 }
 
 export interface CoursePageResponse {
@@ -14,14 +35,24 @@ export interface CoursePageResponse {
   totalPages: number
 }
 
-export const getCourses = async (categoryId?: number, page = 0): Promise<CoursePageResponse> => {
-  const params: Record<string, unknown> = { page, size: 10 }
-  if (categoryId !== undefined) params.categoryId = categoryId
+export interface CourseFilters {
+  categoryId?: number
+  difficulty?: string
+  keyword?: string
+  page?: number
+  size?: number
+}
+
+export const getCourses = async (filters: CourseFilters = {}): Promise<CoursePageResponse> => {
+  const params: Record<string, unknown> = { page: filters.page ?? 0, size: filters.size ?? 12 }
+  if (filters.categoryId !== undefined) params.categoryId = filters.categoryId
+  if (filters.difficulty) params.difficulty = filters.difficulty
+  if (filters.keyword) params.keyword = filters.keyword
   const { data } = await api.get('/courses', { params })
   return data.data
 }
 
-export const getCourse = async (id: number): Promise<CourseResponse> => {
+export const getCourse = async (id: number): Promise<CourseDetailResponse> => {
   const { data } = await api.get(`/courses/${id}`)
   return data.data
 }

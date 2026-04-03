@@ -1,25 +1,71 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCourses, type CourseResponse } from '../api/courses'
+import { getCategories, type CategoryResponse } from '../api/categories'
+
+const DIFFICULTIES = [
+  { label: '전체', value: '' },
+  { label: '초급', value: 'BEGINNER' },
+  { label: '중급', value: 'INTERMEDIATE' },
+  { label: '고급', value: 'ADVANCED' },
+]
+
+const DIFFICULTY_LABEL: Record<string, string> = {
+  BEGINNER: '초급',
+  INTERMEDIATE: '중급',
+  ADVANCED: '고급',
+}
 
 export default function CoursesPage() {
   const navigate = useNavigate()
   const [courses, setCourses] = useState<CourseResponse[]>([])
+  const [categories, setCategories] = useState<CategoryResponse[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined)
+  const [selectedDifficulty, setSelectedDifficulty] = useState('')
+  const [keyword, setKeyword] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+
   useEffect(() => {
-    setLoading(true)
-    getCourses(undefined, page)
-      .then((res) => {
+    getCategories().then(setCategories).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const res = await getCourses({ categoryId: selectedCategory, difficulty: selectedDifficulty || undefined, keyword: keyword || undefined, page })
         setCourses(res.content)
         setTotalPages(res.totalPages)
-      })
-      .catch(() => setError('강의 목록을 불러오지 못했습니다.'))
-      .finally(() => setLoading(false))
-  }, [page])
+      } catch {
+        setError('강의 목록을 불러오지 못했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCourses()
+  }, [page, selectedCategory, selectedDifficulty, keyword])
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setPage(0)
+    setKeyword(searchInput)
+  }
+
+  const handleCategoryChange = (catId: number | undefined) => {
+    setPage(0)
+    setSelectedCategory(catId)
+  }
+
+  const handleDifficultyChange = (diff: string) => {
+    setPage(0)
+    setSelectedDifficulty(diff)
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
@@ -30,26 +76,107 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <header className="flex items-center justify-between px-8 py-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white">DevLearn</h1>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-gray-400 hover:text-white transition-colors"
-        >
-          로그아웃
-        </button>
+        <h1 className="text-xl font-bold text-white cursor-pointer" onClick={() => navigate('/courses')}>DevLearn</h1>
+        <div className="flex gap-4 items-center">
+          <button
+            onClick={() => navigate('/my/courses')}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            내 수강목록
+          </button>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            로그아웃
+          </button>
+        </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-10">
+      <main className="max-w-5xl mx-auto px-6 py-8">
         <h2 className="text-2xl font-semibold mb-6">강의 목록</h2>
 
-        {loading && (
-          <p className="text-gray-400 text-center py-20">불러오는 중...</p>
-        )}
+        {/* Search */}
+        <form onSubmit={handleSearch} className="mb-6 flex gap-2">
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="강의 제목 검색..."
+            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
+          >
+            검색
+          </button>
+          {(keyword || selectedCategory !== undefined || selectedDifficulty) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput('')
+                setKeyword('')
+                setSelectedCategory(undefined)
+                setSelectedDifficulty('')
+                setPage(0)
+              }}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors"
+            >
+              초기화
+            </button>
+          )}
+        </form>
 
-        {error && (
-          <p className="text-red-400 text-center py-20">{error}</p>
-        )}
+        {/* Filters */}
+        <div className="mb-6 space-y-3">
+          {/* Category filter */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handleCategoryChange(undefined)}
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                selectedCategory === undefined
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              전체
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  selectedCategory === cat.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
 
+          {/* Difficulty filter */}
+          <div className="flex gap-2">
+            {DIFFICULTIES.map((d) => (
+              <button
+                key={d.value}
+                onClick={() => handleDifficultyChange(d.value)}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  selectedDifficulty === d.value
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {loading && <p className="text-gray-400 text-center py-20">불러오는 중...</p>}
+        {error && <p className="text-red-400 text-center py-20">{error}</p>}
         {!loading && !error && courses.length === 0 && (
           <p className="text-gray-500 text-center py-20">등록된 강의가 없습니다.</p>
         )}
@@ -61,8 +188,31 @@ export default function CoursesPage() {
               onClick={() => navigate(`/courses/${course.id}`)}
               className="flex items-center justify-between bg-gray-900 hover:bg-gray-800 transition-colors rounded-xl px-6 py-4 cursor-pointer"
             >
-              <span className="font-medium">{course.title}</span>
-              <span className="text-xs text-gray-500">카테고리 #{course.categoryId}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-white truncate">{course.title}</p>
+                {course.description && (
+                  <p className="text-sm text-gray-500 mt-1 truncate">{course.description}</p>
+                )}
+                <div className="flex gap-2 mt-1">
+                  {course.instructorName && (
+                    <span className="text-xs text-gray-500">{course.instructorName}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 ml-4 shrink-0">
+                {course.difficulty && (
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    course.difficulty === 'BEGINNER' ? 'bg-green-900 text-green-300' :
+                    course.difficulty === 'INTERMEDIATE' ? 'bg-yellow-900 text-yellow-300' :
+                    'bg-red-900 text-red-300'
+                  }`}>
+                    {DIFFICULTY_LABEL[course.difficulty] ?? course.difficulty}
+                  </span>
+                )}
+                <span className="text-xs text-gray-500 self-center">
+                  {categories.find(c => c.id === course.categoryId)?.name ?? `#${course.categoryId}`}
+                </span>
+              </div>
             </li>
           ))}
         </ul>
