@@ -1,5 +1,6 @@
 package com.jes.devlearn.global.security.jwt;
 
+import com.jes.devlearn.domain.user.entity.Role;
 import com.jes.devlearn.global.security.CustomUserDetailsService;
 import com.jes.devlearn.global.security.UserPrincipal;
 import jakarta.servlet.FilterChain;
@@ -29,7 +30,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (tokenProvider.validateToken(token)) {
                 String userId = tokenProvider.getUserId(token);
-                UserPrincipal userPrincipal = customUserDetailsService.loadUserById(userId);
+                Role tokenRole = tokenProvider.getRole(token);
+                UserPrincipal userPrincipal = customUserDetailsService.loadUserById(userId, tokenRole);
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());

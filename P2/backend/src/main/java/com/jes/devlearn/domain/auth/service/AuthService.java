@@ -52,11 +52,11 @@ public class AuthService {
 
         UserPrincipal userPrincipal = Objects.requireNonNull((UserPrincipal) authentication.getPrincipal());
 
-        String accessToken = tokenProvider.createToken(userPrincipal.getUserId());
-        String refreshToken = tokenProvider.createRefreshToken(userPrincipal.getUserId());
-
         User user = userRepository.findById(userPrincipal.getUserId())
                 .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+        String accessToken = tokenProvider.createToken(user.getId(), user.getRole());
+        String refreshToken = tokenProvider.createRefreshToken(user.getId());
 
         refreshTokenService.saveOrUpdate(user, refreshToken);
 
@@ -71,11 +71,11 @@ public class AuthService {
 
         RefreshToken rf = refreshTokenService.getValidRefreshToken(dto.refreshToken());
 
-        Long userId = rf.getUser().getId();
-        String accessToken = tokenProvider.createToken(userId);
-        String refreshToken = tokenProvider.createRefreshToken(userId);
+        User user = rf.getUser();
+        String accessToken = tokenProvider.createToken(user.getId(), user.getRole());
+        String refreshToken = tokenProvider.createRefreshToken(user.getId());
 
-        refreshTokenService.saveOrUpdate(rf.getUser(), refreshToken);
+        refreshTokenService.saveOrUpdate(user, refreshToken);
 
         return new AuthResponseDTO(accessToken, refreshToken);
     }

@@ -1,8 +1,10 @@
 package com.jes.devlearn.global.security;
 
+import com.jes.devlearn.domain.user.entity.Role;
 import com.jes.devlearn.domain.user.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
@@ -10,16 +12,23 @@ import java.util.List;
 
 @Getter
 public class UserPrincipal implements UserDetails {
-    private User user;
+    private final User user;
+    private final Role role;
 
     public UserPrincipal(User user) {
         this.user = user;
+        this.role = user.getRole();
     }
 
-    //권한은 아직 구현하지 않기 때문에 빈 리스트 반환
+    public UserPrincipal(User user, Role role) {
+        this.user = user;
+        this.role = role == null ? user.getRole() : role;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        Role effective = role != null ? role : Role.STUDENT;
+        return List.of(new SimpleGrantedAuthority("ROLE_" + effective.name()));
     }
 
     @Override
