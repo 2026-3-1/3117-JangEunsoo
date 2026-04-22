@@ -5,6 +5,7 @@ import com.jes.devlearn.domain.course.dto.request.CourseUpdateRequestDTO;
 import com.jes.devlearn.domain.course.dto.response.*;
 import com.jes.devlearn.domain.course.entity.Course;
 import com.jes.devlearn.domain.course.entity.Lecture;
+import com.jes.devlearn.domain.course.entity.PublishStatus;
 import com.jes.devlearn.domain.course.entity.Section;
 import com.jes.devlearn.domain.course.error.CourseErrorCode;
 import com.jes.devlearn.domain.course.repository.CourseRepository;
@@ -39,6 +40,9 @@ public class CourseService {
     public CourseDetailResponseDTO getCourse(Long id) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new CustomException(CourseErrorCode.COURSE_NOT_FOUND));
+        if (course.getPublishStatus() != PublishStatus.PUBLISHED) {
+            throw new CustomException(CourseErrorCode.COURSE_NOT_FOUND);
+        }
 
         List<Section> sections = sectionRepository.findAllByCourseIdOrderByOrderNumAsc(course.getId());
         List<Long> sectionIds = sections.stream().map(Section::getId).toList();

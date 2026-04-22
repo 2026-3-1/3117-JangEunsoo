@@ -46,6 +46,9 @@ public class Course {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
+    @Column(nullable = false)
+    private Long price = 0L;
+
     private LocalDateTime deletedAt;
 
     public Course(Long categoryId, String title, String description, String difficulty, String instructorName) {
@@ -65,12 +68,32 @@ public class Course {
         this.instructorName = instructorName;
     }
 
+    public Course(Long instructorId, Long categoryId, String title, String description, String difficulty, String instructorName, Long price) {
+        this.instructorId = instructorId;
+        this.categoryId = categoryId;
+        this.title = title;
+        this.description = description;
+        this.difficulty = difficulty;
+        this.instructorName = instructorName;
+        this.price = price == null ? 0L : price;
+    }
+
     public void update(Long categoryId, String title, String description, String difficulty, String instructorName) {
         this.categoryId = categoryId;
         this.title = title;
         this.description = description;
         this.difficulty = difficulty;
         this.instructorName = instructorName;
+    }
+
+    public void updateInstructorEdit(Long categoryId, String title, String description, String difficulty, Long price) {
+        this.categoryId = categoryId;
+        this.title = title;
+        this.description = description;
+        this.difficulty = difficulty;
+        if (price != null) {
+            this.price = price;
+        }
     }
 
     public void publish() {
@@ -86,5 +109,17 @@ public class Course {
 
     public boolean isOwnedBy(Long userId) {
         return this.instructorId != null && this.instructorId.equals(userId);
+    }
+
+    public boolean isPublished() {
+        return this.publishStatus == PublishStatus.PUBLISHED;
+    }
+
+    public boolean isDraft() {
+        return this.publishStatus == PublishStatus.DRAFT;
+    }
+
+    public boolean isFree() {
+        return this.price == null || this.price == 0L;
     }
 }

@@ -29,4 +29,15 @@ public class Section {
         this.title = title;
         this.orderNum = orderNum;
     }
+
+    public void update(String title, Integer orderNum) {
+        this.title = title;
+        if (orderNum != null) {
+            this.orderNum = orderNum;
+        }
+    }
+
+    public void changeOrderNum(Integer orderNum) {
+        this.orderNum = orderNum;
+    }
 }
