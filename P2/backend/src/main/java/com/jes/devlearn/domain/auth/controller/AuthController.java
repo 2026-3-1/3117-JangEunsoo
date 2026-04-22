@@ -4,6 +4,7 @@ import com.jes.devlearn.domain.auth.dto.request.LoginRequestDTO;
 import com.jes.devlearn.domain.auth.dto.request.RefreshRequestDTO;
 import com.jes.devlearn.domain.auth.dto.request.SignupRequestDTO;
 import com.jes.devlearn.domain.auth.dto.response.AuthResponseDTO;
+import com.jes.devlearn.domain.auth.dto.response.MeResponseDTO;
 import com.jes.devlearn.domain.auth.service.AuthService;
 import com.jes.devlearn.global.dto.GlobalApiResponse;
 import com.jes.devlearn.global.security.UserPrincipal;
@@ -46,5 +47,15 @@ public class AuthController {
     public ResponseEntity<GlobalApiResponse<Void>> logout(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         authService.logout(userPrincipal);
         return ResponseEntity.ok(GlobalApiResponse.success(" completed successfully."));
+    }
+
+    @GetMapping("me")
+    public ResponseEntity<GlobalApiResponse<MeResponseDTO>> me(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        MeResponseDTO body = new MeResponseDTO(
+                userPrincipal.getUserId(),
+                userPrincipal.getUsername(),
+                userPrincipal.getRole()
+        );
+        return ResponseEntity.ok(GlobalApiResponse.success(body));
     }
 }
