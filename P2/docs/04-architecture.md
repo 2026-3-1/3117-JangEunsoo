@@ -79,6 +79,39 @@ P2/backend/src/main/java/com/jes/devlearn/
 │   │   ├── repository/UserRepository.java
 │   │   ├── service/UserService.java
 │   │   └── controller/AuthController.java     ← signup role 처리, /me 신규
+│   ├── cart/                                  🆕
+│   │   ├── entity/CartItem.java
+│   │   ├── repository/CartItemRepository.java
+│   │   ├── service/CartService.java
+│   │   ├── controller/CartController.java
+│   │   └── dto/
+│   ├── order/                                 🆕
+│   │   ├── entity/{Order, OrderItem}.java
+│   │   ├── repository/
+│   │   ├── service/OrderService.java
+│   │   ├── controller/OrderController.java
+│   │   └── dto/
+│   ├── payment/                               🆕 (모의 결제)
+│   │   ├── entity/{Payment, Refund}.java
+│   │   ├── repository/
+│   │   ├── service/
+│   │   │   ├── PaymentService.java
+│   │   │   ├── MockPaymentGateway.java        ← 토스 대체 모의
+│   │   │   └── RefundService.java
+│   │   ├── controller/PaymentController.java
+│   │   └── dto/
+│   ├── playback/                              🆕
+│   │   ├── entity/PlaybackPosition.java
+│   │   ├── repository/
+│   │   ├── service/PlaybackService.java
+│   │   ├── controller/PlaybackController.java
+│   │   └── dto/
+│   ├── bookmark/                              🆕
+│   │   ├── entity/Bookmark.java
+│   │   ├── repository/
+│   │   ├── service/BookmarkService.java
+│   │   ├── controller/BookmarkController.java
+│   │   └── dto/
 │   ├── instructor/                            🆕 전체 신규 패키지
 │   │   ├── entity/
 │   │   │   └── InstructorProfile.java
@@ -141,8 +174,13 @@ P2/backend/src/main/java/com/jes/devlearn/
 
 | 패키지 | 역할 |
 |--------|------|
-| `domain.instructor` | 강사 전용 API (강의 CRUD, 섹션/렉처 관리, 대시보드, 프로필 편집/공개 조회) |
-| `global.security.OwnershipValidator` | 소유자 검증 공통 유틸. IDOR 방지 2차 방어선 |
+| `domain.instructor` | 강사 전용 API (강의 CRUD, 섹션/렉처 관리, 대시보드, 프로필 편집/공개 조회, 강의 취소) |
+| `domain.cart` | 장바구니 (담기/조회/삭제) |
+| `domain.order` | 주문 헤더·항목. 장바구니 스냅샷 → 주문 생성 |
+| `domain.payment` | 모의 결제 & 환불. `MockPaymentGateway`가 토스 자리를 대신 (항상 SUCCESS) |
+| `domain.playback` | 재생 위치 upsert, "이어듣기" 계산 |
+| `domain.bookmark` | 렉처 북마크 CRUD |
+| `global.security.OwnershipValidator` | 소유자 검증 공통 유틸. IDOR 방지 2차 방어선 (Course, Order, Bookmark, Playback 등 모두 사용) |
 
 ---
 
@@ -169,10 +207,15 @@ P2/frontend/src/
 ├── pages/
 │   ├── LoginPage.tsx
 │   ├── SignupPage.tsx                         ← role 선택 UI
-│   ├── CoursesPage.tsx                        ← 강사 링크 노출
-│   ├── CourseDetailPage.tsx                   ← 강사 카드 노출
-│   ├── MyCoursesPage.tsx
-│   ├── LearningPage.tsx
+│   ├── CoursesPage.tsx                        ← 강사 링크 + 가격 노출
+│   ├── CourseDetailPage.tsx                   ← 강사 카드 + "장바구니 담기"
+│   ├── CartPage.tsx                           🆕 /cart
+│   ├── CheckoutPage.tsx                       🆕 /checkout (주문 확인 + 모의 결제 버튼)
+│   ├── OrdersPage.tsx                         🆕 /orders
+│   ├── OrderDetailPage.tsx                    🆕 /orders/:id
+│   ├── MyCoursesPage.tsx                      ← 이어듣기 카드 추가
+│   ├── MyBookmarksPage.tsx                    🆕 /bookmarks
+│   ├── LearningPage.tsx                       ← 재생 위치 저장 + 북마크 UI
 │   ├── InstructorPublicProfilePage.tsx        🆕 /instructors/:userId
 │   └── instructor/                            🆕 강사 전용 페이지
 │       ├── InstructorDashboardPage.tsx
@@ -379,6 +422,88 @@ PUT /api/instructor/courses/42   Authorization: Bearer <jwt>
 | 4 | 이미 PUBLISHED | 409 `ALREADY_PUBLISHED` |
 | 5 | 섹션 0개 | 422 `PUBLISH_VALIDATION_FAILED` |
 
+### 7-1-A. 시나리오 A': 학생이 장바구니에 담고 모의 결제한다 🆕
+
+```
+[Frontend] CoursesPage/CartPage/CheckoutPage                    [Backend]
+  │
+  │  1) CourseDetailPage에서 "장바구니 담기"
+  │     POST /api/cart/items { courseId: 1 }
+  ├──────────────────────────────────────────────────►
+  │                                                       CartController → CartService
+  │                                                         ↓ Course PUBLISHED 확인
+  │                                                         ↓ enrollments 중복 확인
+  │                                                         ↓ cart_items upsert
+  │  ◄─────────────────────────────────────────────────
+  │  2) /cart 로 이동 → 목록 확인 → "결제하기"
+  │     POST /api/orders   (본문 없음)
+  ├──────────────────────────────────────────────────►
+  │                                                       OrderService.createFromCart(userId)
+  │                                                         ↓ cart 비었으면 400
+  │                                                         ↓ order_no 생성 (ORD-YYYYMMDD-NNNN)
+  │                                                         ↓ orders INSERT (status=PENDING)
+  │                                                         ↓ 각 cart_item → order_items
+  │                                                             (course_title_snapshot, price_snapshot 복사)
+  │                                                         ↓ total_amount 합산
+  │  ◄─────────────────────────────────────────────────
+  │     { orderId: 77, status: PENDING }
+  │
+  │  3) /checkout/:orderId → 확인 → "결제 진행"
+  │     POST /api/payments/checkout { orderId: 77 }
+  ├──────────────────────────────────────────────────►
+  │                                                       PaymentService.checkout(userId, orderId)
+  │                                                         ↓ OwnershipValidator.requireOwnedOrder
+  │                                                         ↓ status == PENDING 확인
+  │                                                         ↓ MockPaymentGateway.process()
+  │                                                             ├─ tx_id = UUID
+  │                                                             └─ 항상 SUCCESS 반환
+  │                                                         ↓ payments INSERT
+  │                                                             (method=MOCK_CARD, status=SUCCESS)
+  │                                                         ↓ orders.status=PAID, paid_at=now
+  │                                                         ↓ order_items별 enrollments INSERT
+  │                                                         ↓ cart 비우기 (delete user's cart_items)
+  │                                                       [단일 @Transactional로 묶음]
+  │  ◄─────────────────────────────────────────────────
+  │     { status: PAID, enrollmentIds: [301, 302] }
+  │
+  │  4) "결제 완료" 토스트 → /my/courses 로 이동
+  │     두 강의 카드 즉시 노출
+  ▼
+```
+
+**실패 경로:**
+
+| 단계 | 실패 | 응답 |
+|------|-----|-----|
+| 2 | cart 비었음 | 400 `EMPTY_CART` |
+| 2 | DRAFT/ARCHIVED 강의가 담긴 상태 | 409 `COURSE_NOT_PURCHASABLE` |
+| 3 | 남의 orderId | 404 |
+| 3 | 이미 PAID | 409 `ORDER_NOT_PAYABLE` |
+
+### 7-1-B. 시나리오 A'': 환불 🆕
+
+```
+[Frontend] OrderDetailPage                                       [Backend]
+  │  "부분 환불" (orderItem 502만)
+  │  POST /api/orders/77/refund { reason: "USER_REQUEST", orderItemIds:[502] }
+  ├──────────────────────────────────────────────────►
+  │                                                       RefundService.refund(...)
+  │                                                         ↓ OwnershipValidator.requireOwnedOrder
+  │                                                         ↓ order.status ∈ {PAID, PARTIAL_REFUNDED}
+  │                                                         ↓ target order_items 검증
+  │                                                         ↓ 각 item: status=REFUNDED, refunded_at=now
+  │                                                         ↓ refunds INSERT (reason=USER_REQUEST)
+  │                                                         ↓ 해당 강의 enrollments 삭제
+  │                                                         ↓ orders.refunded_amount += 59000
+  │                                                         ↓ 전부 REFUNDED면 orders.status=REFUNDED
+  │                                                           일부면 PARTIAL_REFUNDED
+  │                                                       [@Transactional]
+  │  ◄─────────────────────────────────────────────────
+  ▼
+```
+
+**강의 단체 취소 (강사 트리거):** `POST /api/instructor/courses/{id}/cancel` → 해당 강의를 포함한 모든 PAID order_items 조회 → 동일 로직을 `reason=COURSE_CANCELLED`로 반복 → 강의 `ARCHIVED`.
+
 ### 7-2. 시나리오 B: 학생이 수강신청 후 진도를 올린다
 
 ```
@@ -418,6 +543,38 @@ PUT /api/instructor/courses/42   Authorization: Bearer <jwt>
   ▼
 ```
 
+### 7-3. 시나리오 C: 이어듣기 + 북마크 🆕
+
+```
+[Frontend] LearningPage                                          [Backend]
+  │  재생 중 10초마다 PUT /api/playback
+  │     { enrollmentId: 77, lectureId: 301, positionSeconds: 437 }
+  ├──────────────────────────────────────────────────►
+  │                                                       PlaybackService.upsert
+  │                                                         ↓ enrollment.ownedBy(userId)
+  │                                                         ↓ playback_positions UPSERT
+  │                                                         ↓ last_played_at = now
+  │  ◄─────────────────────────────────────────────────
+  │
+  │  이탈 → 다음 접속 → MyCoursesPage "이어보기" 버튼 클릭
+  │  GET /api/playback/enrollments/77/resume
+  ├──────────────────────────────────────────────────►
+  │                                                         ↓ last_played_at DESC LIMIT 1
+  │  ◄─────────────────────────────────────────────────
+  │     { lecture:{...}, positionSeconds: 437 }
+  │
+  │  LearningPage 열림 → <video currentTime={437}>
+  │
+  │  학생이 "현재 위치 북마크" 클릭
+  │  POST /api/bookmarks { lectureId:301, positionSeconds:437, memo:"면접 단골" }
+  ├──────────────────────────────────────────────────►
+  │                                                       BookmarkService.create
+  │                                                         ↓ NOT_ENROLLED 체크
+  │                                                         ↓ bookmarks INSERT
+  │  ◄─────────────────────────────────────────────────
+  ▼
+```
+
 ---
 
 ## 8. 프론트 보호 라우트 전략
@@ -428,6 +585,11 @@ PUT /api/instructor/courses/42   Authorization: Bearer <jwt>
 <Route element={<ProtectedRoute />}>
   {/* 로그인 필요 */}
   <Route path="/my/courses" element={<MyCoursesPage />} />
+  <Route path="/cart" element={<CartPage />} />                          {/* 🆕 */}
+  <Route path="/checkout/:orderId" element={<CheckoutPage />} />         {/* 🆕 */}
+  <Route path="/orders" element={<OrdersPage />} />                      {/* 🆕 */}
+  <Route path="/orders/:id" element={<OrderDetailPage />} />             {/* 🆕 */}
+  <Route path="/bookmarks" element={<MyBookmarksPage />} />              {/* 🆕 */}
 
   <Route element={<RoleGuard allow="INSTRUCTOR" />}>
     {/* 로그인 + 강사 전용 */}

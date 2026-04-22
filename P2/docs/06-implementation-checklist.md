@@ -223,7 +223,125 @@ P2 구현을 8개 Phase로 쪼갠 작업 체크리스트. 각 Phase는 **DoD(Def
 
 ---
 
-## 9. Phase 8 — E2E 테스트 & 통합
+## 8-A. Phase 8 — 장바구니 & 모의 결제 API 🆕
+
+**목표**: 수강 진입을 결제 플로우로 전환. 모의 PG로 거래 기록을 DB에 축적.
+
+### 체크리스트
+
+- [ ] `courses.price` 필드 반영 (02-data-model §5-3)
+- [ ] `lectures.duration_seconds` 반영 (02-data-model §5-4)
+- [ ] 테이블 생성: `cart_items`, `orders`, `order_items`, `payments`, `refunds` (02 §5-5)
+- [ ] 인덱스 적용 (02 §5-7)
+- [ ] `CartController` + `CartService` + DTO
+  - [ ] `GET /api/cart`, `POST /api/cart/items`, `DELETE /api/cart/items/{courseId}`, `DELETE /api/cart`
+  - [ ] 중복 담기 방지 (UNIQUE + 409)
+  - [ ] 이미 수강 중인 강의는 담을 수 없음
+- [ ] `OrderService.createFromCart(userId)` (Transactional)
+  - [ ] `order_no` 발번기 (예: `ORD-yyyyMMdd-XXXX`, 당일 카운터)
+  - [ ] 장바구니 스냅샷 → `order_items` (title/price 복사)
+  - [ ] `PENDING` 상태로 저장
+- [ ] `MockPaymentGateway.process(orderId, amount)`
+  - [ ] 항상 SUCCESS (기본), `simulateFailure=true` 쿼리로 FAILED 재현 가능
+  - [ ] UUID 기반 `mockTransactionId` 반환
+- [ ] `PaymentService.checkout(userId, orderId)` (Transactional)
+  - [ ] 소유자 검증, `PENDING` 상태 검증
+  - [ ] `MockPaymentGateway` 호출 → `payments` insert
+  - [ ] 주문 `PAID`로 전환, `paid_at` 기록
+  - [ ] `order_items`별 `enrollments` insert (있다면 skip)
+  - [ ] cart 비우기 (same-user cart_items delete)
+- [ ] `RefundService.refund(userId, orderId, itemIds, reason)`
+  - [ ] 전체/부분 모두 지원
+  - [ ] `order_items.status=REFUNDED`, `refunds` insert
+  - [ ] 해당 강의 `enrollments` 삭제 (CASCADE로 `lecture_progress`/`playback_positions`까지)
+  - [ ] 주문 상태 `REFUNDED` / `PARTIAL_REFUNDED` 갱신, `refunded_amount` 증가
+- [ ] `POST /api/instructor/courses/{id}/cancel`
+  - [ ] 소유자 검증 + 강의 존재
+  - [ ] 해당 강의를 포함한 PAID `order_items` 전부 조회 → `reason=COURSE_CANCELLED`로 일괄 환불
+  - [ ] 강의 `ARCHIVED`
+- [ ] `POST /api/enrollments` 수정: 요청 강의가 유료면 400 `COURSE_NOT_FREE` (주문 경유 요구)
+- [ ] 에러 코드 정의: `EMPTY_CART`, `ALREADY_IN_CART`, `COURSE_NOT_PURCHASABLE`, `ORDER_NOT_PAYABLE`, `ORDER_NOT_REFUNDABLE`, `INVALID_REFUND_ITEMS`
+- [ ] 단위/통합 테스트
+  - [ ] 장바구니 중복/정합성
+  - [ ] 주문 생성: 빈 카트 400, DRAFT 강의 포함 시 409
+  - [ ] 모의 결제 성공 → enrollment 생성 확인
+  - [ ] 같은 주문 2번 결제 시도 → 409
+  - [ ] 환불: 부분/전체, 남의 주문 404
+  - [ ] 강의 취소: 구매자 전원 환불 확인
+
+### DoD
+
+- 장바구니 담기 → 주문 → 모의 결제 → `/my/courses` 자동 반영까지 E2E 통과
+- 환불 후 `/my/courses`에서 해당 강의 사라짐
+- `orders`·`payments`·`refunds`에 각 이벤트가 1건씩 정확히 기록
+
+---
+
+## 8-B. Phase 9 — 장바구니/결제/주문 프론트 UI 🆕
+
+### 체크리스트
+
+- [ ] `api/cart.ts`, `api/orders.ts`, `api/payments.ts`
+- [ ] `CartPage.tsx` (`/cart`)
+  - [ ] 담긴 강의 목록 + 합계
+  - [ ] 개별 삭제 / 비우기
+  - [ ] "결제하기" → 주문 생성 후 `/checkout/:orderId`로 이동
+- [ ] `CheckoutPage.tsx` (`/checkout/:orderId`)
+  - [ ] 주문 항목 요약 + 총 결제금액
+  - [ ] "모의 결제 진행" 버튼 → `POST /api/payments/checkout`
+  - [ ] 성공 시 `/orders/:id` 이동, "결제 완료" 토스트
+- [ ] `OrdersPage.tsx` (`/orders`)
+  - [ ] 주문 카드 목록 (status 배지 + 결제일)
+  - [ ] status 필터
+- [ ] `OrderDetailPage.tsx` (`/orders/:id`)
+  - [ ] 주문 항목별 상태 + 환불 버튼
+  - [ ] 결제/환불 이력 타임라인
+- [ ] `CourseDetailPage`에 "장바구니 담기" / "이미 담김" / "이미 수강 중" 상태 버튼
+- [ ] `NavBar`에 장바구니 아이콘 + 담긴 개수 뱃지
+
+### DoD
+
+- seed 데이터의 student3 로그인 → `/cart` → 결제 완주 가능
+- student1의 기존 주문에서 부분 환불 수행 가능
+
+---
+
+## 8-C. Phase 10 — 이어듣기 + 북마크 + 리뷰 게이트 🆕
+
+### 체크리스트
+
+- [ ] `playback_positions`, `bookmarks` 테이블 생성 (02 §5-6)
+- [ ] `PlaybackController` + Service
+  - [ ] `PUT /api/playback` (upsert, enrollment 소유자 검증)
+  - [ ] `GET /api/playback/lectures/{lectureId}?enrollmentId=`
+  - [ ] `GET /api/playback/enrollments/{id}/resume`
+- [ ] `BookmarkController` + Service
+  - [ ] CRUD + 소유자 검증 + 남의 북마크 조회 시 404
+  - [ ] 렉처에 대한 enrollment 없으면 403 `NOT_ENROLLED`
+- [ ] 리뷰 게이트: `ReviewService.create()`에 진도율 ≥ 80 가드 추가
+  - [ ] 실패 시 422 `REVIEW_NOT_ALLOWED_INSUFFICIENT_PROGRESS`
+  - [ ] 응답 data에 `currentProgressRate`, `requiredRate` 포함
+- [ ] 프론트 `LearningPage`
+  - [ ] `<video>` `timeupdate` 10초 throttle → `PUT /api/playback`
+  - [ ] 페이지 진입 시 `GET /api/playback/lectures/:id` 로 `currentTime` 복원
+  - [ ] 북마크 추가 버튼 (메모 입력 모달)
+  - [ ] 사이드바에 북마크 리스트 (클릭 → seek)
+- [ ] 프론트 `MyCoursesPage`
+  - [ ] "이어보기" 버튼 → `/resume` 호출 → 해당 렉처로 deep-link
+- [ ] 프론트 `MyBookmarksPage` (`/bookmarks`)
+- [ ] `CourseDetailPage` 리뷰 폼
+  - [ ] 진도율 80% 미만이면 폼 비활성 + 안내 문구
+  - [ ] 서버 422 응답도 UI에 에러 표시
+
+### DoD
+
+- LearningPage 재생 → 페이지 이탈 → 재진입 시 정확히 이탈 지점에서 재생
+- 진도 79%에서 리뷰 시도 → 422 에러 UI 표시
+- 진도 80%+ 에서 리뷰 정상 작성
+
+---
+
+## 9. Phase 11 — E2E 테스트 & 통합
 
 **목표**: 권한 우회 회귀 테스트, P1/P2 통합 점검, 데모 준비.
 
@@ -236,6 +354,13 @@ P2 구현을 8개 Phase로 쪼갠 작업 체크리스트. 각 Phase는 **DoD(Def
   - [ ] DRAFT 강의가 `/api/courses` 목록에 포함되지 않음
   - [ ] DRAFT 강의 상세를 소유자 아닌 자가 조회 → 404
   - [ ] 발행 전 섹션/렉처가 없는 강의를 publish 시도 → 422
+  - [ ] 🆕 다른 유저의 `/api/orders/{id}` 조회 → 404
+  - [ ] 🆕 다른 유저의 `/api/bookmarks/{id}` 수정 → 404
+  - [ ] 🆕 `/api/playback` 다른 유저 enrollment로 upsert → 403
+  - [ ] 🆕 진도 79%에서 리뷰 작성 → 422
+  - [ ] 🆕 같은 주문 2회 결제 → 409
+  - [ ] 🆕 DRAFT 강의를 장바구니 담기 → 404
+  - [ ] 🆕 강의 취소 시 구매자 enrollment 전원 삭제 확인
 - [ ] 프론트 라우팅 회귀
   - [ ] 비로그인 `/instructor/*` → `/login`
   - [ ] STUDENT `/instructor/*` → `/courses`
@@ -264,7 +389,10 @@ P2 구현을 8개 Phase로 쪼갠 작업 체크리스트. 각 Phase는 **DoD(Def
 | 5 | 프론트 공통 기반 | TODO | |
 | 6 | 강사 콘솔 UI | TODO | |
 | 7 | 공개 프로필 & 학생 UI | TODO | |
-| 8 | E2E 테스트 & 통합 | TODO | |
+| **8** | **장바구니 & 모의 결제 API** 🆕 | TODO | |
+| **9** | **장바구니/결제/주문 프론트 UI** 🆕 | TODO | |
+| **10** | **이어듣기 + 북마크 + 리뷰 80% 게이트** 🆕 | TODO | |
+| **11** | E2E 테스트 & 통합 | TODO | (기존 Phase 8 역할 확장) |
 
 ---
 
@@ -272,7 +400,9 @@ P2 구현을 8개 Phase로 쪼갠 작업 체크리스트. 각 Phase는 **DoD(Def
 
 다음 항목은 본 체크리스트에서 **명시적으로 제외**한다:
 
-- 결제 / 구독 / 쿠폰
+- **실제 PG 연동** (토스 SDK, 웹훅, 정산 리포트) — P2는 모의
+- 쿠폰 / 할인 / 프로모션
+- 구독 결제 / 정기 결제
 - 강의 평점 기반 추천 (ML)
 - 강의 비디오 실제 업로드·스트리밍 (URL만 저장)
 - 알림/이메일

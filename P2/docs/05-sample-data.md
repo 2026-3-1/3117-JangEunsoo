@@ -12,9 +12,15 @@
 | 강사 계정 | 4 | `instructor1` ~ `instructor4` |
 | 학생 계정 | 3 | `student1` ~ `student3` |
 | 강사 프로필 | 4 | 강사 계정과 1:1 |
-| 강의 | 9 | PUBLISHED 7 + DRAFT 1 + ARCHIVED 1 |
+| 강의 | 9 | PUBLISHED 7 + DRAFT 2 (instructor4, instructor2 각 1) + ARCHIVED 1 |
 | 섹션 | 18 | 강의당 1~3 |
-| 렉처 | 42 | 섹션당 2~3 |
+| 렉처 | 42 | 섹션당 2~3 (각 렉처는 `duration_seconds` 보유) |
+| 장바구니 | 2 | student3이 2건 담아둔 상태 (미결제 데모) |
+| 주문 | 3 | student1: 1건(PAID), student2: 1건(PAID 후 부분환불) |
+| 결제 | 2 | MOCK_CARD / SUCCESS |
+| 환불 | 1 | student2의 부분 환불 |
+| 북마크 | 4 | student1이 렉처 몇 곳에 메모 |
+| 재생 위치 | 3 | 이어듣기 시나리오용 |
 
 모든 비밀번호는 **BCrypt로 해싱된 `Password123!`** 을 사용한다.
 
@@ -105,85 +111,85 @@ INSERT INTO instructor_profiles (
 -- ========== instructor1: 3 courses (2 PUBLISHED + 1 ARCHIVED) ==========
 INSERT INTO courses (
   id, title, description, difficulty, category_id,
-  instructor_id, instructor_name, publish_status, published_at,
+  instructor_id, instructor_name, price, publish_status, published_at,
   created_at, updated_at
 ) VALUES
   (1, '스프링부트 입문',
       '자바 백엔드의 사실상 표준. 프로젝트 생성부터 JPA, Security까지 훑어봅니다.',
       'BEGINNER', 1,
-      1, '김백엔드', 'PUBLISHED', '2026-03-01 10:00:00',
+      1, '김백엔드', 49000, 'PUBLISHED', '2026-03-01 10:00:00',
       '2026-02-20 09:00:00', '2026-03-01 10:00:00'),
 
   (2, 'JPA 실전',
       '엔티티 설계, 연관관계, 성능 튜닝까지 현업 JPA 사용법.',
       'INTERMEDIATE', 1,
-      1, '김백엔드', 'PUBLISHED', '2026-03-15 10:00:00',
+      1, '김백엔드', 69000, 'PUBLISHED', '2026-03-15 10:00:00',
       '2026-03-01 09:00:00', '2026-03-15 10:00:00'),
 
   (3, '레거시 스프링 3 강의',
       '구버전 커리큘럼. 더 이상 업데이트하지 않습니다.',
       'BEGINNER', 1,
-      1, '김백엔드', 'ARCHIVED', '2025-11-01 10:00:00',
+      1, '김백엔드', 0, 'ARCHIVED', '2025-11-01 10:00:00',
       '2025-10-01 09:00:00', '2026-01-15 12:00:00');
 
 -- ========== instructor2: 2 courses (2 PUBLISHED) ==========
 INSERT INTO courses (
   id, title, description, difficulty, category_id,
-  instructor_id, instructor_name, publish_status, published_at,
+  instructor_id, instructor_name, price, publish_status, published_at,
   created_at, updated_at
 ) VALUES
   (4, 'React 18 완전 정복',
       '훅, Suspense, 동시성 렌더링까지 모던 React의 모든 것.',
       'INTERMEDIATE', 2,
-      2, '이프론트', 'PUBLISHED', '2026-03-10 10:00:00',
+      2, '이프론트', 59000, 'PUBLISHED', '2026-03-10 10:00:00',
       '2026-02-25 09:00:00', '2026-03-10 10:00:00'),
 
   (5, 'TypeScript 타입 체조',
       '제네릭, 조건부 타입, 유틸리티 타입으로 타입 안전성 끌어올리기.',
       'ADVANCED', 2,
-      2, '이프론트', 'PUBLISHED', '2026-03-20 10:00:00',
+      2, '이프론트', 79000, 'PUBLISHED', '2026-03-20 10:00:00',
       '2026-03-05 09:00:00', '2026-03-20 10:00:00');
 
 -- ========== instructor3: 2 courses (2 PUBLISHED) ==========
 INSERT INTO courses (
   id, title, description, difficulty, category_id,
-  instructor_id, instructor_name, publish_status, published_at,
+  instructor_id, instructor_name, price, publish_status, published_at,
   created_at, updated_at
 ) VALUES
   (6, 'MySQL 성능 튜닝',
       '인덱스 설계, 실행계획 분석, 잠금 이슈 해결까지.',
       'ADVANCED', 3,
-      3, '박데이터', 'PUBLISHED', '2026-03-12 10:00:00',
+      3, '박데이터', 89000, 'PUBLISHED', '2026-03-12 10:00:00',
       '2026-02-28 09:00:00', '2026-03-12 10:00:00'),
 
   (7, 'Docker & Compose 기초',
       '컨테이너 개념부터 개발환경 구성, 배포까지 핸즈온.',
       'BEGINNER', 4,
-      3, '박데이터', 'PUBLISHED', '2026-03-18 10:00:00',
+      3, '박데이터', 0, 'PUBLISHED', '2026-03-18 10:00:00',
       '2026-03-03 09:00:00', '2026-03-18 10:00:00');
 
 -- ========== instructor4: 1 course (DRAFT only - 학생에겐 안 보임) ==========
 INSERT INTO courses (
   id, title, description, difficulty, category_id,
-  instructor_id, instructor_name, publish_status, published_at,
+  instructor_id, instructor_name, price, publish_status, published_at,
   created_at, updated_at
 ) VALUES
   (8, '자료구조 입문 (준비중)',
       '배열, 연결리스트, 트리, 해시테이블을 파이썬으로.',
       'BEGINNER', 5,
-      4, '신입강사', 'DRAFT', NULL,
+      4, '신입강사', 39000, 'DRAFT', NULL,
       '2026-04-10 09:00:00', '2026-04-15 12:00:00');
 
 -- ========== 추가: instructor2의 DRAFT 1개 (강사 콘솔 테스트용) ==========
 INSERT INTO courses (
   id, title, description, difficulty, category_id,
-  instructor_id, instructor_name, publish_status, published_at,
+  instructor_id, instructor_name, price, publish_status, published_at,
   created_at, updated_at
 ) VALUES
   (9, 'Next.js 14 (작성중)',
       'App Router와 서버 컴포넌트로 짜는 현업 Next.js.',
       'INTERMEDIATE', 2,
-      2, '이프론트', 'DRAFT', NULL,
+      2, '이프론트', 69000, 'DRAFT', NULL,
       '2026-04-05 09:00:00', '2026-04-15 09:00:00');
 ```
 
@@ -262,23 +268,120 @@ INSERT INTO reviews (id, course_id, user_id, rating, content, created_at, update
 
 ---
 
+## 8-A. 장바구니 · 주문 · 결제 · 환불 Seed 🆕
+
+```sql
+-- ========== 장바구니 (student3이 담아둔 상태, 미결제) ==========
+INSERT INTO cart_items (id, user_id, course_id, created_at) VALUES
+  (1, 7, 1, '2026-04-19 10:00:00'),
+  (2, 7, 4, '2026-04-19 10:05:00');
+
+-- ========== student1의 결제 주문 (강의 1, 4 구매 → PAID) ==========
+INSERT INTO orders (id, user_id, order_no, status, total_amount, refunded_amount, created_at, paid_at, cancelled_at) VALUES
+  (1, 5, 'ORD-20260320-0001', 'PAID', 108000, 0, '2026-03-20 09:55:00', '2026-03-20 10:00:00', NULL);
+
+INSERT INTO order_items (id, order_id, course_id, course_title_snapshot, price_snapshot, status, refunded_at) VALUES
+  (1, 1, 1, '스프링부트 입문',     49000, 'PAID', NULL),
+  (2, 1, 4, 'React 18 완전 정복',  59000, 'PAID', NULL);
+
+INSERT INTO payments (id, order_id, amount, method, status, mock_transaction_id, paid_at) VALUES
+  (1, 1, 108000, 'MOCK_CARD', 'SUCCESS', 'mock-tx-00000001', '2026-03-20 10:00:00');
+
+-- 결제 완료로 자동 생성된 enrollments (05 §6 수강 seed와 중복될 수 있으므로 5장 기준으로만 유지)
+-- 이미 삽입한 enrollments (1: student1→course1, 2: student1→course4) 가 이 결제에 의해 생성된 것으로 간주.
+
+
+-- ========== student2의 결제 (강의 1만 구매) → 이후 부분환불 ==========
+INSERT INTO orders (id, user_id, order_no, status, total_amount, refunded_amount, created_at, paid_at, cancelled_at) VALUES
+  (2, 6, 'ORD-20260318-0002', 'REFUNDED', 49000, 49000, '2026-03-18 13:55:00', '2026-03-18 14:00:00', NULL);
+
+INSERT INTO order_items (id, order_id, course_id, course_title_snapshot, price_snapshot, status, refunded_at) VALUES
+  (3, 2, 1, '스프링부트 입문', 49000, 'REFUNDED', '2026-04-02 10:00:00');
+
+INSERT INTO payments (id, order_id, amount, method, status, mock_transaction_id, paid_at) VALUES
+  (2, 2, 49000, 'MOCK_CARD', 'SUCCESS', 'mock-tx-00000002', '2026-03-18 14:00:00');
+
+INSERT INTO refunds (id, order_id, amount, reason, status, refunded_at) VALUES
+  (1, 2, 49000, 'USER_REQUEST', 'SUCCESS', '2026-04-02 10:00:00');
+
+-- 데모용: student2의 enrollment (id=3, course 1)은 이 환불로 삭제되었다고 가정
+-- (따라서 05 §8 seed에서 enrollment(3)은 삭제하거나, 환불 전 스냅샷으로 둘 수 있음 — 실제 프로덕트는 후자)
+```
+
+> **주의**: §8 수강 seed와 §8-A 주문 seed는 같은 enrollment 레코드를 가리킬 수 있다. 데모 목적이면 §8 seed를 그대로 두고, §8-A를 "거래 이력 전용"으로 해석해도 무방하다. 구현 시에는 `PaymentService.checkout()`이 enrollment를 생성하고, 환불 시 삭제한다.
+
+---
+
+## 8-B. 재생 위치 · 북마크 Seed 🆕
+
+```sql
+-- ========== 재생 위치 (이어듣기) ==========
+-- student1의 enrollment 1 (강의 1, 스프링부트 입문)에서 렉처 3의 200초까지 보고 종료
+INSERT INTO playback_positions (id, enrollment_id, lecture_id, position_seconds, last_played_at) VALUES
+  (1, 1, 1,   0, '2026-03-20 10:10:00'),
+  (2, 1, 2, 600, '2026-03-20 10:20:00'),
+  (3, 1, 3, 200, '2026-03-21 09:15:00');
+  -- 최신 last_played_at이 렉처 3이므로 "이어듣기"는 강의1 → 렉처3 → 200초
+
+-- ========== 북마크 ==========
+INSERT INTO bookmarks (id, user_id, lecture_id, position_seconds, memo, created_at, updated_at) VALUES
+  (1, 5, 2, 120, '프로젝트 생성 부분 다시 보기',        '2026-03-20 10:15:00', '2026-03-20 10:15:00'),
+  (2, 5, 3,  80, 'HTTP 메시지 변환기 설명 좋음',         '2026-03-21 09:05:00', '2026-03-21 09:05:00'),
+  (3, 5, 4, 300, 'REST 컨트롤러 예제 핵심',              '2026-03-22 11:00:00', '2026-03-22 11:00:00'),
+  (4, 6, 1,  60, '환불 전에 담아둔 북마크',              '2026-03-19 09:00:00', '2026-03-19 09:00:00');
+```
+
+---
+
 ## 9. 데모 시나리오
 
-### 시나리오 1: 학생 플로우
+### 시나리오 1: 학생 플로우 (기본)
 
 1. `student1` / `Password123!` 로그인
-2. `/courses` → 7개 PUBLISHED 강의 노출 (DRAFT·ARCHIVED 숨김)
-3. "스프링부트 입문" 클릭 → 강사 카드(김백엔드, 10년차) 표시
+2. `/courses` → 7개 PUBLISHED 강의 노출 (DRAFT·ARCHIVED 숨김), 가격 표시
+3. "스프링부트 입문" 클릭 → 강사 카드(김백엔드, 10년차) + 가격 49,000원 표시
 4. 강사 이름 클릭 → `/instructors/1` 강사 프로필
-5. "JPA 실전" 수강 → `/my/courses`에서 확인
+5. `/my/courses`에서 기존 수강 중인 강의 확인 + 이어듣기 버튼 노출 (렉처 3, 200초부터)
+
+### 시나리오 1-A: 장바구니 → 모의 결제 플로우 🆕
+
+1. `student3` / `Password123!` 로그인 (데모 seed로 이미 장바구니 2건 담긴 상태)
+2. `/cart` → 담긴 강의 2건(총 108,000원) 확인
+3. "결제하기" → `POST /api/orders` 자동 호출 → `/checkout/{orderId}` 이동
+4. 주문 내역 확인 → "결제 진행" 버튼 → `POST /api/payments/checkout`
+5. 1초 이내 "결제 완료" 토스트 → `/my/courses`에 2개 강의 추가 확인
+6. `/orders`에서 방금 주문 `PAID` 상태 확인
+
+### 시나리오 1-B: 환불 플로우 🆕
+
+1. `student1` 로그인
+2. `/orders` → 기존 주문(`ORD-20260320-0001`) 클릭
+3. `/orders/1` 상세 → "React 18 완전 정복" 옆 "환불" 버튼
+4. `POST /api/orders/1/refund { orderItemIds:[2] }` → 부분환불
+5. 주문 상태 `PARTIAL_REFUNDED`, `/my/courses`에서 해당 강의 사라짐
+
+### 시나리오 1-C: 이어듣기 + 북마크 + 리뷰 게이트 🆕
+
+1. `student1` 로그인 → `/my/courses` → "스프링부트 입문" 이어듣기
+2. 재생 중 "현재 위치 북마크" → `/bookmarks`에 표시
+3. 진도가 80% 미만이라 리뷰 작성 시도 → 422 에러, "80% 이상 들으셔야 합니다" 메시지
+4. 렉처 8까지 완료 처리 → 진도 100% → 리뷰 작성 성공
 
 ### 시나리오 2: 강사 플로우
 
 1. `instructor2` / `Password123!` 로그인
 2. 네비게이션 바에 "강사 콘솔" 노출 확인
-3. `/instructor/courses` → `React 18 완전 정복` (PUBLISHED), `TypeScript 타입 체조` (PUBLISHED), `Next.js 14` (DRAFT) 3건 노출
-4. DRAFT 강의 편집 → 섹션/렉처 추가 → 발행 버튼
-5. `/instructor/courses/4/students` → 수강생 student1 확인
+3. `/instructor/dashboard` → 매출/환불 카드 확인 (예: PAID 합계, 환불 금액)
+4. `/instructor/courses` → `React 18 완전 정복` (PUBLISHED), `TypeScript 타입 체조` (PUBLISHED), `Next.js 14` (DRAFT) 3건 노출
+5. DRAFT 강의 편집 → 섹션/렉처 추가 → 가격 입력 → 발행 버튼
+6. `/instructor/courses/4/students` → 수강생 student1 확인
+
+### 시나리오 2-A: 강사가 강의를 취소한다 (일괄 환불) 🆕
+
+1. `instructor2` 로그인 → `/instructor/courses/4/edit`
+2. "강의 취소" 버튼 → `POST /api/instructor/courses/4/cancel`
+3. 해당 강의 구매자(student1) 전원에게 `reason=COURSE_CANCELLED`로 환불 생성, 강의 `ARCHIVED`
+4. student1이 `/my/courses` 열면 해당 강의 사라짐
 
 ### 시나리오 3: 권한 우회 시도 (보안 테스트)
 

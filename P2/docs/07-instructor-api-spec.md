@@ -125,6 +125,7 @@ public class InstructorCourseController { ... }
 | `DELETE /courses/{id}` | soft delete | — | 200 void |
 | `POST /courses/{id}/publish` | 발행 | — | `InstructorCourseResponseDTO` |
 | `POST /courses/{id}/archive` | 보관 | — | `InstructorCourseResponseDTO` |
+| `POST /courses/{id}/cancel` | 🆕 폐강 (일괄 환불 + ARCHIVED) | — | `CourseCancelResultDTO` |
 | `GET /courses/{id}/students` | 수강생 목록 | Query: page, size | `Page<CourseStudentResponseDTO>` |
 | `GET /courses/{id}/reviews` | 리뷰 | Query: page, size | `Page<ReviewResponseDTO>` (기존 DTO 재사용) |
 
@@ -286,7 +287,8 @@ public record CourseCreateRequestDTO(
         @NotBlank @Pattern(regexp = "BEGINNER|INTERMEDIATE|ADVANCED",
                            message = "난이도는 BEGINNER/INTERMEDIATE/ADVANCED 중 하나여야 합니다.")
         String difficulty,
-        @NotNull Long categoryId
+        @NotNull Long categoryId,
+        @NotNull @Min(value = 0, message = "가격은 0원 이상이어야 합니다.") Long price   // 🆕
 ) {}
 ```
 
@@ -297,7 +299,8 @@ public record CourseUpdateRequestDTO(
         @NotBlank @Size(max = 200) String title,
         @Size(max = 5000) String description,
         @NotBlank @Pattern(regexp = "BEGINNER|INTERMEDIATE|ADVANCED") String difficulty,
-        @NotNull Long categoryId
+        @NotNull Long categoryId,
+        @NotNull @Min(0) Long price   // 🆕
 ) {}
 ```
 
@@ -317,7 +320,8 @@ public record LectureCreateRequestDTO(
         @NotBlank @Size(max = 200) String title,
         @NotBlank @Pattern(regexp = "^https?://.+", message = "동영상 URL은 http/https로 시작해야 합니다.")
         String videoUrl,
-        @NotNull @Min(1) Integer orderNum
+        @NotNull @Min(1) Integer orderNum,
+        @NotNull @Min(0) Integer durationSeconds   // 🆕 재생 위치 계산용
 ) {}
 ```
 
@@ -342,11 +346,13 @@ public record InstructorCourseResponseDTO(
         String difficulty,
         Long categoryId,
         String categoryName,
+        Long price,                          // 🆕
         String publishStatus,
         LocalDateTime publishedAt,
         Integer sectionCount,
         Integer lectureCount,
-        Integer enrolledStudentCount
+        Integer enrolledStudentCount,
+        Long totalRevenue                    // 🆕 (결제완료-환불) 집계
 ) {
     public static InstructorCourseResponseDTO from(Course course, /* ... */) { /* ... */ }
 }
@@ -373,9 +379,18 @@ public record InstructorDashboardResponseDTO(
         Integer totalStudents,
         Integer totalReviews,
         Double averageRating,
+        Revenue revenue,                          // 🆕
         List<RecentEnrollment> recentEnrollments
 ) {
     public record CourseCount(Integer draft, Integer published, Integer archived) {}
+
+    /** 🆕 매출 집계 — 강사 본인 강의의 모든 order_items 기준 */
+    public record Revenue(
+            Long grossAmount,     // 전체 결제된 합계 (price_snapshot 합)
+            Long refundedAmount,  // 환불된 합계
+            Long netAmount        // gross - refunded
+    ) {}
+
     public record RecentEnrollment(
             Long userId, String username,
             Long courseId, String courseTitle,
@@ -397,7 +412,18 @@ public interface InstructorCourseService {
     InstructorCourseResponseDTO publish(Long instructorId, Long courseId);
     InstructorCourseResponseDTO archive(Long instructorId, Long courseId);
     Page<CourseStudentResponseDTO> getStudents(Long instructorId, Long courseId, Pageable pageable);
+
+    /** 🆕 강의 취소: ARCHIVED 전환 + 해당 강의의 모든 PAID order_items 일괄 환불 */
+    CourseCancelResultDTO cancelCourse(Long instructorId, Long courseId);
 }
+
+/** 강의 취소 결과 */
+public record CourseCancelResultDTO(
+        Long courseId,
+        LocalDateTime archivedAt,
+        Integer refundedOrderCount,
+        Long refundedAmount
+) {}
 
 public interface InstructorCurriculumService {
     SectionResponseDTO addSection(Long instructorId, Long courseId, SectionCreateRequestDTO dto);
