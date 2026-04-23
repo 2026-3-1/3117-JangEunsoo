@@ -7,7 +7,11 @@ import MyCoursesPage from './pages/MyCoursesPage'
 import LearningPage from './pages/LearningPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import RoleGuard from './components/RoleGuard'
-import InstructorPlaceholderPage from './pages/instructor/InstructorPlaceholderPage'
+import InstructorDashboardPage from './pages/instructor/InstructorDashboardPage'
+import InstructorCourseListPage from './pages/instructor/InstructorCourseListPage'
+import InstructorCourseEditorPage from './pages/instructor/InstructorCourseEditorPage'
+import InstructorCourseStudentsPage from './pages/instructor/InstructorCourseStudentsPage'
+import InstructorProfileEditPage from './pages/instructor/InstructorProfileEditPage'
 
 function App() {
   return (
@@ -53,7 +57,7 @@ function App() {
           path="/instructor/dashboard"
           element={
             <RoleGuard allow={['INSTRUCTOR']}>
-              <InstructorPlaceholderPage title="강사 대시보드" />
+              <InstructorDashboardPage />
             </RoleGuard>
           }
         />
@@ -61,7 +65,7 @@ function App() {
           path="/instructor/courses"
           element={
             <RoleGuard allow={['INSTRUCTOR']}>
-              <InstructorPlaceholderPage title="내 강의 관리" />
+              <InstructorCourseListPage />
             </RoleGuard>
           }
         />
@@ -69,7 +73,7 @@ function App() {
           path="/instructor/courses/new"
           element={
             <RoleGuard allow={['INSTRUCTOR']}>
-              <InstructorPlaceholderPage title="새 강의 만들기" />
+              <InstructorCourseEditorPage />
             </RoleGuard>
           }
         />
@@ -77,7 +81,7 @@ function App() {
           path="/instructor/courses/:id/edit"
           element={
             <RoleGuard allow={['INSTRUCTOR']}>
-              <InstructorPlaceholderPage title="강의 편집" />
+              <InstructorCourseEditorPage />
             </RoleGuard>
           }
         />
@@ -85,7 +89,7 @@ function App() {
           path="/instructor/courses/:id/students"
           element={
             <RoleGuard allow={['INSTRUCTOR']}>
-              <InstructorPlaceholderPage title="수강생 관리" />
+              <InstructorCourseStudentsPage />
             </RoleGuard>
           }
         />
@@ -93,7 +97,7 @@ function App() {
           path="/instructor/profile"
           element={
             <RoleGuard allow={['INSTRUCTOR']}>
-              <InstructorPlaceholderPage title="강사 프로필 편집" />
+              <InstructorProfileEditPage />
             </RoleGuard>
           }
         />
