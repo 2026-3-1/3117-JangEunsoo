@@ -6,6 +6,9 @@ import com.jes.devlearn.domain.auth.dto.request.SignupRequestDTO;
 import com.jes.devlearn.domain.auth.dto.response.AuthResponseDTO;
 import com.jes.devlearn.domain.auth.entity.RefreshToken;
 import com.jes.devlearn.domain.auth.error.AuthErrorCode;
+import com.jes.devlearn.domain.instructor.entity.InstructorProfile;
+import com.jes.devlearn.domain.instructor.repository.InstructorProfileRepository;
+import com.jes.devlearn.domain.user.entity.Role;
 import com.jes.devlearn.domain.user.entity.User;
 import com.jes.devlearn.domain.user.error.UserErrorCode;
 import com.jes.devlearn.domain.user.repository.UserRepository;
@@ -28,6 +31,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
 
     private final UserRepository userRepository;
+    private final InstructorProfileRepository instructorProfileRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -39,9 +43,19 @@ public class AuthService {
             throw new CustomException(UserErrorCode.DUPLICATE_USERNAME);
         }
 
-        User user = new User(dto.username(), passwordEncoder.encode(dto.password()));
-
+        Role role = dto.role() == null ? Role.STUDENT : dto.role();
+        User user = new User(dto.username(), passwordEncoder.encode(dto.password()), role);
         userRepository.save(user);
+
+        if (role == Role.INSTRUCTOR) {
+            String displayName = (dto.displayName() == null || dto.displayName().isBlank())
+                    ? dto.username()
+                    : dto.displayName();
+            InstructorProfile profile = new InstructorProfile(
+                    user, displayName, dto.bio(), dto.careerYears(), null
+            );
+            instructorProfileRepository.save(profile);
+        }
     }
 
     @Transactional

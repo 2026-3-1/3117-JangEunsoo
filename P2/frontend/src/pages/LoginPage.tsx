@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { login } from '../api/auth'
+import { fetchMe, login } from '../api/auth'
+import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { refresh } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,7 +19,9 @@ export default function LoginPage() {
       const { accessToken, refreshToken } = await login(username, password)
       localStorage.setItem('accessToken', accessToken)
       localStorage.setItem('refreshToken', refreshToken)
-      navigate('/')
+      const me = await fetchMe()
+      await refresh()
+      navigate(me.role === 'INSTRUCTOR' ? '/instructor/dashboard' : '/courses')
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -30,7 +34,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-white tracking-tight">
             Dev<span className="text-blue-500">Learn</span>
@@ -38,7 +41,6 @@ export default function LoginPage() {
           <p className="mt-2 text-gray-400 text-sm">개발자를 위한 온라인 강의 플랫폼</p>
         </div>
 
-        {/* Card */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-xl">
           <h2 className="text-xl font-semibold text-white mb-6">로그인</h2>
 
@@ -71,9 +73,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && (
-              <p className="text-red-400 text-sm">{error}</p>
-            )}
+            {error && <p className="text-red-400 text-sm">{error}</p>}
 
             <button
               type="submit"
