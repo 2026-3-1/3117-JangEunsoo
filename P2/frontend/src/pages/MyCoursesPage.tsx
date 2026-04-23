@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getMyEnrollments, type EnrollmentResponse } from '../api/enrollments'
 import { getCourse, type CourseDetailResponse } from '../api/courses'
 import { getProgressRate, type ProgressRateResponse } from '../api/progress'
+import NavBar from '../components/NavBar'
 
 interface EnrolledCourse {
   enrollment: EnrollmentResponse
@@ -42,16 +43,7 @@ export default function MyCoursesPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
-      <header className="flex items-center justify-between px-8 py-4 border-b border-gray-800">
-        <button
-          onClick={() => navigate('/courses')}
-          className="text-sm text-gray-400 hover:text-white transition-colors"
-        >
-          ← 강의 목록
-        </button>
-        <h1 className="text-xl font-bold text-white">DevLearn</h1>
-        <div className="w-20" />
-      </header>
+      <NavBar />
 
       <main className="max-w-4xl mx-auto px-6 py-10">
         <h2 className="text-2xl font-semibold mb-6">내 수강목록</h2>
@@ -73,9 +65,16 @@ export default function MyCoursesPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-white truncate">{course.title}</h3>
-                    {course.instructorName && (
+                    {course.instructorId ? (
+                      <Link
+                        to={`/instructors/${course.instructorId}`}
+                        className="text-sm text-blue-400 hover:text-blue-300 mt-0.5 inline-block"
+                      >
+                        {course.instructorName ?? '강사'}
+                      </Link>
+                    ) : course.instructorName ? (
                       <p className="text-sm text-gray-400 mt-0.5">{course.instructorName}</p>
-                    )}
+                    ) : null}
                   </div>
                   <button
                     onClick={() => navigate(`/courses/${course.id}/learn/${enrollment.id}`)}

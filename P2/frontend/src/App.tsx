@@ -12,6 +12,7 @@ import InstructorCourseListPage from './pages/instructor/InstructorCourseListPag
 import InstructorCourseEditorPage from './pages/instructor/InstructorCourseEditorPage'
 import InstructorCourseStudentsPage from './pages/instructor/InstructorCourseStudentsPage'
 import InstructorProfileEditPage from './pages/instructor/InstructorProfileEditPage'
+import InstructorPublicProfilePage from './pages/InstructorPublicProfilePage'
 
 function App() {
   return (
@@ -49,6 +50,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MyCoursesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/instructors/:userId"
+          element={
+            <ProtectedRoute>
+              <InstructorPublicProfilePage />
             </ProtectedRoute>
           }
         />

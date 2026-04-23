@@ -16,11 +16,13 @@ export interface SectionResponse {
 
 export interface CourseResponse {
   id: number
+  instructorId: number | null
   categoryId: number
   title: string
   description: string | null
   difficulty: string | null
   instructorName: string | null
+  price: number
 }
 
 export interface CourseDetailResponse extends CourseResponse {

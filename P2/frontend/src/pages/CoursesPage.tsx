@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getCourses, type CourseResponse } from '../api/courses'
 import { getCategories, type CategoryResponse } from '../api/categories'
+import NavBar from '../components/NavBar'
 
 const DIFFICULTIES = [
   { label: '전체', value: '' },
@@ -39,7 +40,12 @@ export default function CoursesPage() {
       setLoading(true)
       setError('')
       try {
-        const res = await getCourses({ categoryId: selectedCategory, difficulty: selectedDifficulty || undefined, keyword: keyword || undefined, page })
+        const res = await getCourses({
+          categoryId: selectedCategory,
+          difficulty: selectedDifficulty || undefined,
+          keyword: keyword || undefined,
+          page,
+        })
         setCourses(res.content)
         setTotalPages(res.totalPages)
       } catch {
@@ -57,46 +63,13 @@ export default function CoursesPage() {
     setKeyword(searchInput)
   }
 
-  const handleCategoryChange = (catId: number | undefined) => {
-    setPage(0)
-    setSelectedCategory(catId)
-  }
-
-  const handleDifficultyChange = (diff: string) => {
-    setPage(0)
-    setSelectedDifficulty(diff)
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    navigate('/login')
-  }
-
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
-      <header className="flex items-center justify-between px-8 py-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white cursor-pointer" onClick={() => navigate('/courses')}>DevLearn</h1>
-        <div className="flex gap-4 items-center">
-          <button
-            onClick={() => navigate('/my/courses')}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            내 수강목록
-          </button>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            로그아웃
-          </button>
-        </div>
-      </header>
+      <NavBar />
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         <h2 className="text-2xl font-semibold mb-6">강의 목록</h2>
 
-        {/* Search */}
         <form onSubmit={handleSearch} className="mb-6 flex gap-2">
           <input
             type="text"
@@ -128,12 +101,10 @@ export default function CoursesPage() {
           )}
         </form>
 
-        {/* Filters */}
         <div className="mb-6 space-y-3">
-          {/* Category filter */}
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => handleCategoryChange(undefined)}
+              onClick={() => { setPage(0); setSelectedCategory(undefined) }}
               className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 selectedCategory === undefined
                   ? 'bg-blue-600 text-white'
@@ -145,7 +116,7 @@ export default function CoursesPage() {
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => handleCategoryChange(cat.id)}
+                onClick={() => { setPage(0); setSelectedCategory(cat.id) }}
                 className={`px-3 py-1 rounded-full text-sm transition-colors ${
                   selectedCategory === cat.id
                     ? 'bg-blue-600 text-white'
@@ -157,12 +128,11 @@ export default function CoursesPage() {
             ))}
           </div>
 
-          {/* Difficulty filter */}
           <div className="flex gap-2">
             {DIFFICULTIES.map((d) => (
               <button
                 key={d.value}
-                onClick={() => handleDifficultyChange(d.value)}
+                onClick={() => { setPage(0); setSelectedDifficulty(d.value) }}
                 className={`px-3 py-1 rounded-full text-sm transition-colors ${
                   selectedDifficulty === d.value
                     ? 'bg-purple-600 text-white'
@@ -185,21 +155,36 @@ export default function CoursesPage() {
           {courses.map((course) => (
             <li
               key={course.id}
-              onClick={() => navigate(`/courses/${course.id}`)}
-              className="flex items-center justify-between bg-gray-900 hover:bg-gray-800 transition-colors rounded-xl px-6 py-4 cursor-pointer"
+              className="flex items-center justify-between bg-gray-900 hover:bg-gray-800 transition-colors rounded-xl px-6 py-4"
             >
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-white truncate">{course.title}</p>
+                <p
+                  className="font-medium text-white truncate cursor-pointer hover:text-blue-300"
+                  onClick={() => navigate(`/courses/${course.id}`)}
+                >
+                  {course.title}
+                </p>
                 {course.description && (
                   <p className="text-sm text-gray-500 mt-1 truncate">{course.description}</p>
                 )}
-                <div className="flex gap-2 mt-1">
-                  {course.instructorName && (
+                <div className="flex gap-3 mt-1 items-center">
+                  {course.instructorId ? (
+                    <Link
+                      to={`/instructors/${course.instructorId}`}
+                      className="text-xs text-blue-400 hover:text-blue-300"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {course.instructorName ?? '강사'}
+                    </Link>
+                  ) : course.instructorName ? (
                     <span className="text-xs text-gray-500">{course.instructorName}</span>
-                  )}
+                  ) : null}
+                  <span className="text-xs text-gray-400">
+                    {course.price === 0 ? '무료' : `${course.price.toLocaleString()}원`}
+                  </span>
                 </div>
               </div>
-              <div className="flex gap-2 ml-4 shrink-0">
+              <div className="flex gap-2 ml-4 shrink-0 items-center">
                 {course.difficulty && (
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     course.difficulty === 'BEGINNER' ? 'bg-green-900 text-green-300' :
