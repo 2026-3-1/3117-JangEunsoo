@@ -1,10 +1,24 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
+import { getCart } from '../api/cart'
 
 export default function NavBar() {
   const { username, role, setLoggedOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [cartCount, setCartCount] = useState(0)
+
+  useEffect(() => {
+    if (!username || role === 'INSTRUCTOR') {
+      setCartCount(0)
+      return
+    }
+    getCart()
+      .then((c) => setCartCount(c.itemCount))
+      .catch(() => setCartCount(0))
+  }, [username, role, location.pathname])
 
   const handleLogout = async () => {
     try {
@@ -30,8 +44,13 @@ export default function NavBar() {
           <Link to="/my/courses" className="text-sm text-gray-300 hover:text-white">
             내 강의실
           </Link>
-          <Link to="/cart" className="text-sm text-gray-300 hover:text-white">
+          <Link to="/cart" className="text-sm text-gray-300 hover:text-white relative">
             장바구니
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-4 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
           </Link>
           <Link to="/orders" className="text-sm text-gray-300 hover:text-white">
             주문 내역

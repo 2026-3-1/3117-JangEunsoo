@@ -13,6 +13,10 @@ import InstructorCourseEditorPage from './pages/instructor/InstructorCourseEdito
 import InstructorCourseStudentsPage from './pages/instructor/InstructorCourseStudentsPage'
 import InstructorProfileEditPage from './pages/instructor/InstructorProfileEditPage'
 import InstructorPublicProfilePage from './pages/InstructorPublicProfilePage'
+import CartPage from './pages/CartPage'
+import CheckoutPage from './pages/CheckoutPage'
+import OrdersPage from './pages/OrdersPage'
+import OrderDetailPage from './pages/OrderDetailPage'
 
 function App() {
   return (
@@ -58,6 +62,38 @@ function App() {
           element={
             <ProtectedRoute>
               <InstructorPublicProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <CartPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout/:orderId"
+          element={
+            <ProtectedRoute>
+              <CheckoutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <OrdersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/:orderId"
+          element={
+            <ProtectedRoute>
+              <OrderDetailPage />
             </ProtectedRoute>
           }
         />

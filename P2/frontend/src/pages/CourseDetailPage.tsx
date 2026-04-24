@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getCourse, type CourseDetailResponse } from '../api/courses'
 import { enroll, getMyEnrollments, type EnrollmentResponse } from '../api/enrollments'
 import { getReviews, createReview, deleteReview, type ReviewResponse } from '../api/reviews'
+import { addToCart } from '../api/cart'
 import NavBar from '../components/NavBar'
 
 const DIFFICULTY_LABEL: Record<string, string> = {
@@ -74,8 +75,7 @@ export default function CourseDetailPage() {
     if (!course) return
     setActionMsg('')
     try {
-      const cartApi = await import('../api/cart')
-      await cartApi.addToCart(course.id)
+      await addToCart(course.id)
       setActionMsg('장바구니에 담았습니다.')
     } catch (err: unknown) {
       const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code
