@@ -1,5 +1,7 @@
 package com.jes.devlearn.domain.enrollment.service;
 
+import com.jes.devlearn.domain.course.entity.Course;
+import com.jes.devlearn.domain.course.entity.PublishStatus;
 import com.jes.devlearn.domain.course.repository.CourseRepository;
 import com.jes.devlearn.domain.course.error.CourseErrorCode;
 import com.jes.devlearn.domain.enrollment.dto.request.EnrollmentCreateRequestDTO;
@@ -23,8 +25,13 @@ public class EnrollmentService {
 
     @Transactional
     public EnrollmentResponseDTO enroll(Long userId, EnrollmentCreateRequestDTO dto) {
-        if (!courseRepository.existsById(dto.courseId())) {
+        Course course = courseRepository.findById(dto.courseId())
+                .orElseThrow(() -> new CustomException(CourseErrorCode.COURSE_NOT_FOUND));
+        if (course.getPublishStatus() != PublishStatus.PUBLISHED) {
             throw new CustomException(CourseErrorCode.COURSE_NOT_FOUND);
+        }
+        if (!course.isFree()) {
+            throw new CustomException(EnrollmentErrorCode.COURSE_NOT_FREE);
         }
         if (enrollmentRepository.existsByUserIdAndCourseId(userId, dto.courseId())) {
             throw new CustomException(EnrollmentErrorCode.ALREADY_ENROLLED);

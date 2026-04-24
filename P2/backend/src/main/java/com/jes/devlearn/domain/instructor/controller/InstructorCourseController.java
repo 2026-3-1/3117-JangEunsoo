@@ -4,6 +4,7 @@ import com.jes.devlearn.domain.course.entity.PublishStatus;
 import com.jes.devlearn.domain.instructor.dto.request.InstructorCourseCreateRequest;
 import com.jes.devlearn.domain.instructor.dto.request.InstructorCourseUpdateRequest;
 import com.jes.devlearn.domain.instructor.dto.response.InstructorCourseResponse;
+import com.jes.devlearn.domain.instructor.service.InstructorCourseCancellationService;
 import com.jes.devlearn.domain.instructor.service.InstructorCourseService;
 import com.jes.devlearn.global.dto.GlobalApiResponse;
 import com.jes.devlearn.global.security.UserPrincipal;
@@ -23,6 +24,7 @@ import java.util.List;
 public class InstructorCourseController {
 
     private final InstructorCourseService instructorCourseService;
+    private final InstructorCourseCancellationService instructorCourseCancellationService;
 
     @PostMapping
     public ResponseEntity<GlobalApiResponse<InstructorCourseResponse>> create(
@@ -80,6 +82,15 @@ public class InstructorCourseController {
             @PathVariable Long id
     ) {
         instructorCourseService.archive(principal.getUserId(), id);
+        return ResponseEntity.ok(GlobalApiResponse.success(null));
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<GlobalApiResponse<Void>> cancel(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id
+    ) {
+        instructorCourseCancellationService.cancelCourse(principal.getUserId(), id);
         return ResponseEntity.ok(GlobalApiResponse.success(null));
     }
 }
