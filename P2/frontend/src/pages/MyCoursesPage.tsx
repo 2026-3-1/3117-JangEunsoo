@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getMyEnrollments, type EnrollmentResponse } from '../api/enrollments'
 import { getCourse, type CourseDetailResponse } from '../api/courses'
 import { getProgressRate, type ProgressRateResponse } from '../api/progress'
+import { getResume } from '../api/playback'
 import NavBar from '../components/NavBar'
 
 interface EnrolledCourse {
@@ -76,12 +77,29 @@ export default function MyCoursesPage() {
                       <p className="text-sm text-gray-400 mt-0.5">{course.instructorName}</p>
                     ) : null}
                   </div>
-                  <button
-                    onClick={() => navigate(`/courses/${course.id}/learn/${enrollment.id}`)}
-                    className="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-medium transition-colors"
-                  >
-                    학습하기
-                  </button>
+                  <div className="shrink-0 flex flex-col gap-2">
+                    <button
+                      onClick={() => navigate(`/courses/${course.id}/learn/${enrollment.id}`)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-medium transition-colors"
+                    >
+                      학습하기
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const r = await getResume(enrollment.id)
+                          navigate(`/courses/${course.id}/learn/${enrollment.id}`, {
+                            state: { resumeLectureId: r.lectureId, resumeAt: r.currentTimeSeconds },
+                          })
+                        } catch {
+                          navigate(`/courses/${course.id}/learn/${enrollment.id}`)
+                        }
+                      }}
+                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-xs font-medium transition-colors"
+                    >
+                      이어보기
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-1">

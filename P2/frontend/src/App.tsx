@@ -17,6 +17,7 @@ import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import OrdersPage from './pages/OrdersPage'
 import OrderDetailPage from './pages/OrderDetailPage'
+import MyBookmarksPage from './pages/MyBookmarksPage'
 
 function App() {
   return (
@@ -54,6 +55,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MyCoursesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my/bookmarks"
+          element={
+            <ProtectedRoute>
+              <MyBookmarksPage />
             </ProtectedRoute>
           }
         />

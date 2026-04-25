@@ -1,8 +1,11 @@
 package com.jes.devlearn.global.exception;
 
+import com.jes.devlearn.domain.review.error.ReviewProgressGateException;
 import com.jes.devlearn.global.dto.GlobalApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -60,6 +63,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(GlobalApiResponse.fail(HttpStatus.NOT_FOUND, "not found"));
+    }
+
+    @ExceptionHandler(ReviewProgressGateException.class)
+    public ResponseEntity<GlobalApiResponse<Map<String, Integer>>> handleReviewProgressGate(ReviewProgressGateException ex) {
+        log.warn("[{}] {}", ex.getClass().getSimpleName(), ex.getMessage());
+        Map<String, Integer> data = Map.of(
+                "currentProgressRate", ex.getCurrentProgressRate(),
+                "requiredRate", ex.getRequiredRate()
+        );
+        return ResponseEntity
+                .status(ex.getErrorCode().getStatus())
+                .body(GlobalApiResponse.fail(ex.getErrorCode().getStatus(), ex.getMessage(), data));
     }
 
     // CustomException

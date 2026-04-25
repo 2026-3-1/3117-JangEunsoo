@@ -67,4 +67,13 @@ public class GlobalApiResponse<T> {
                 .message(message)
                 .build();
     }
+
+    public static <T> GlobalApiResponse<T> fail(HttpStatus status, String message, T data) {
+        return GlobalApiResponse.<T>builder()
+                .success(false)
+                .status(status.value())
+                .message(message)
+                .data(data)
+                .build();
+    }
 }

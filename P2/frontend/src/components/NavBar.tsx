@@ -44,6 +44,9 @@ export default function NavBar() {
           <Link to="/my/courses" className="text-sm text-gray-300 hover:text-white">
             내 강의실
           </Link>
+          <Link to="/my/bookmarks" className="text-sm text-gray-300 hover:text-white">
+            북마크
+          </Link>
           <Link to="/cart" className="text-sm text-gray-300 hover:text-white relative">
             장바구니
             {cartCount > 0 && (

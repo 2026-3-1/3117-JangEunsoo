@@ -1,7 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getCourse, type CourseDetailResponse, type LectureResponse } from '../api/courses'
 import { getProgressRate, completeLecture, type ProgressRateResponse } from '../api/progress'
+import { getPlaybackPosition, updatePlayback } from '../api/playback'
+import {
+  createBookmark,
+  deleteBookmark,
+  listBookmarksByLecture,
+  type Bookmark,
+} from '../api/bookmark'
 
 function extractYouTubeId(url: string): string {
   const match = url.match(
@@ -10,9 +17,22 @@ function extractYouTubeId(url: string): string {
   return match ? match[1] : url
 }
 
+function isHtmlVideo(url: string | null | undefined): boolean {
+  if (!url) return false
+  return /\.(mp4|webm|ogg|m4v)(\?.*)?$/i.test(url)
+}
+
+function formatSeconds(s: number): string {
+  const m = Math.floor(s / 60)
+  const sec = s % 60
+  return `${m}:${sec.toString().padStart(2, '0')}`
+}
+
 export default function LearningPage() {
   const { id, enrollmentId } = useParams<{ id: string; enrollmentId: string }>()
   const navigate = useNavigate()
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const lastSavedRef = useRef<number>(0)
 
   const [course, setCourse] = useState<CourseDetailResponse | null>(null)
   const [progress, setProgress] = useState<ProgressRateResponse | null>(null)
@@ -21,6 +41,9 @@ export default function LearningPage() {
   const [completing, setCompleting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
+  const [bookmarkMemo, setBookmarkMemo] = useState('')
+  const [currentTime, setCurrentTime] = useState(0)
 
   useEffect(() => {
     if (!id || !enrollmentId) return
@@ -45,6 +68,42 @@ export default function LearningPage() {
     fetchAll()
   }, [id, enrollmentId])
 
+  useEffect(() => {
+    if (!selectedLecture || !enrollmentId) return
+    let cancelled = false
+    Promise.all([
+      getPlaybackPosition(selectedLecture.id, Number(enrollmentId)).catch(() => null),
+      listBookmarksByLecture(selectedLecture.id).catch(() => [] as Bookmark[]),
+    ]).then(([pos, marks]) => {
+      if (cancelled) return
+      setBookmarks(marks)
+      const seekTo = pos?.currentTimeSeconds ?? 0
+      setCurrentTime(seekTo)
+      lastSavedRef.current = seekTo
+      if (videoRef.current && seekTo > 0) {
+        try {
+          videoRef.current.currentTime = seekTo
+        } catch {
+          /* ignore */
+        }
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedLecture?.id, enrollmentId])
+
+  const handleTimeUpdate = () => {
+    const v = videoRef.current
+    if (!v || !selectedLecture || !enrollmentId) return
+    const now = Math.floor(v.currentTime)
+    setCurrentTime(now)
+    if (Math.abs(now - lastSavedRef.current) >= 10) {
+      lastSavedRef.current = now
+      updatePlayback(Number(enrollmentId), selectedLecture.id, now).catch(() => undefined)
+    }
+  }
+
   const handleComplete = async () => {
     if (!selectedLecture || !enrollmentId) return
     if (completedIds.has(selectedLecture.id)) return
@@ -59,6 +118,34 @@ export default function LearningPage() {
     } finally {
       setCompleting(false)
     }
+  }
+
+  const handleAddBookmark = async () => {
+    if (!selectedLecture) return
+    try {
+      const bm = await createBookmark(selectedLecture.id, currentTime, bookmarkMemo || undefined)
+      setBookmarks((prev) => [...prev, bm].sort((a, b) => a.timeSeconds - b.timeSeconds))
+      setBookmarkMemo('')
+    } catch {
+      alert('북마크 추가에 실패했습니다.')
+    }
+  }
+
+  const handleDeleteBookmark = async (bookmarkId: number) => {
+    await deleteBookmark(bookmarkId)
+    setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId))
+  }
+
+  const handleSeekTo = (seconds: number) => {
+    if (videoRef.current) {
+      try {
+        videoRef.current.currentTime = seconds
+        videoRef.current.play().catch(() => undefined)
+      } catch {
+        /* ignore */
+      }
+    }
+    setCurrentTime(seconds)
   }
 
   if (loading) {
@@ -78,6 +165,7 @@ export default function LearningPage() {
   }
 
   const isCompleted = selectedLecture ? completedIds.has(selectedLecture.id) : false
+  const useHtmlVideo = isHtmlVideo(selectedLecture?.videoUrl)
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
@@ -105,7 +193,6 @@ export default function LearningPage() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <aside className="w-72 border-r border-gray-800 overflow-y-auto shrink-0">
           <div className="p-4 space-y-4">
             {course.sections.map((section) => (
@@ -141,40 +228,102 @@ export default function LearningPage() {
           </div>
         </aside>
 
-        {/* Main content */}
-        <main className="flex-1 flex flex-col items-center justify-center p-8 space-y-6">
+        <main className="flex-1 overflow-y-auto p-8 space-y-6">
           {selectedLecture ? (
             <>
-              <div className="w-full max-w-2xl space-y-4">
+              <div className="w-full max-w-3xl space-y-4 mx-auto">
                 <h2 className="text-xl font-semibold">{selectedLecture.title}</h2>
 
                 {selectedLecture.videoUrl ? (
-                  <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden">
-                    <iframe
-                      key={selectedLecture.videoUrl}
-                      src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLecture.videoUrl)}`}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
+                  useHtmlVideo ? (
+                    <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        key={selectedLecture.id}
+                        src={selectedLecture.videoUrl}
+                        controls
+                        onTimeUpdate={handleTimeUpdate}
+                        className="w-full h-full"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden">
+                      <iframe
+                        key={selectedLecture.videoUrl}
+                        src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLecture.videoUrl)}`}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )
                 ) : (
                   <div className="aspect-video bg-gray-900 rounded-xl flex items-center justify-center">
                     <p className="text-gray-500">영상이 없습니다.</p>
                   </div>
                 )}
 
-                <button
-                  onClick={handleComplete}
-                  disabled={isCompleted || completing}
-                  className={`w-full py-3 rounded-xl font-medium transition-colors ${
-                    isCompleted
-                      ? 'bg-green-900 text-green-300 cursor-default'
-                      : 'bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900 disabled:text-blue-400'
-                  }`}
-                >
-                  {isCompleted ? '✓ 완료됨' : completing ? '처리 중...' : '완료 처리'}
-                </button>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500">
+                    현재 위치: {formatSeconds(currentTime)}
+                  </p>
+                  <button
+                    onClick={handleComplete}
+                    disabled={isCompleted || completing}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isCompleted
+                        ? 'bg-green-900 text-green-300 cursor-default'
+                        : 'bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900 disabled:text-blue-400'
+                    }`}
+                  >
+                    {isCompleted ? '✓ 완료됨' : completing ? '처리 중...' : '완료 처리'}
+                  </button>
+                </div>
+
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-white mb-3">북마크</h3>
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      value={bookmarkMemo}
+                      onChange={(e) => setBookmarkMemo(e.target.value)}
+                      placeholder="이 위치 메모 (선택)"
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm"
+                    />
+                    <button
+                      onClick={handleAddBookmark}
+                      className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-sm"
+                    >
+                      현재 위치 북마크
+                    </button>
+                  </div>
+                  {bookmarks.length === 0 ? (
+                    <p className="text-xs text-gray-500">북마크가 없습니다.</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {bookmarks.map((b) => (
+                        <li
+                          key={b.id}
+                          className="flex items-center justify-between text-sm bg-gray-950 border border-gray-800 rounded px-3 py-2"
+                        >
+                          <button
+                            onClick={() => handleSeekTo(b.timeSeconds)}
+                            className="text-blue-400 hover:text-blue-300"
+                          >
+                            {formatSeconds(b.timeSeconds)}
+                          </button>
+                          <span className="flex-1 mx-3 text-gray-300 truncate">{b.memo ?? ''}</span>
+                          <button
+                            onClick={() => handleDeleteBookmark(b.id)}
+                            className="text-xs text-red-400 hover:text-red-300"
+                          >
+                            삭제
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </>
           ) : (
