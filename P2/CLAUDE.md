@@ -191,21 +191,21 @@ PENDING → PAID → (REFUNDED | PARTIAL_REFUNDED)
 
 ## Implementation Status
 
-**현재**: PRD 작성 완료, 구현 미시작 (2026-04-20 기준)
+**현재**: 전체 Phase 구현 완료 (2026-05-06 기준)
 
 | Phase | 이름 | 상태 |
 |-------|------|-----|
-| 1 | DB 마이그레이션 & User.role | TODO |
-| 2 | Spring Security 역할 인가 | TODO |
-| 3 | 강사 강의 CRUD API | TODO |
-| 4 | 강사 대시보드 & 프로필 API | TODO |
-| 5 | 프론트 공통 기반 | TODO |
-| 6 | 강사 콘솔 UI | TODO |
-| 7 | 공개 프로필 & 학생 UI | TODO |
-| 🆕 8 | 장바구니·주문·모의 결제 (백엔드) | TODO |
-| 🆕 9 | 장바구니·결제·주문 내역 (프론트) | TODO |
-| 🆕 10 | 이어듣기·북마크·리뷰 진도 게이트 | TODO |
-| 11 | E2E 테스트 & 통합 (기존 Phase 8) | TODO |
+| 1 | DB 마이그레이션 & User.role | DONE |
+| 2 | Spring Security 역할 인가 | DONE |
+| 3 | 강사 강의 CRUD API | DONE |
+| 4 | 강사 대시보드 & 프로필 API | DONE |
+| 5 | 프론트 공통 기반 | DONE |
+| 6 | 강사 콘솔 UI | DONE |
+| 7 | 공개 프로필 & 학생 UI | DONE |
+| 🆕 8 | 장바구니·주문·모의 결제 (백엔드) | DONE |
+| 🆕 9 | 장바구니·결제·주문 내역 (프론트) | DONE |
+| 🆕 10 | 이어듣기·북마크·리뷰 진도 게이트 | DONE |
+| 11 | E2E 테스트 & 통합 (기존 Phase 8) | DONE |
 
 자세한 DoD는 [docs/06-implementation-checklist.md](./docs/06-implementation-checklist.md).
 
