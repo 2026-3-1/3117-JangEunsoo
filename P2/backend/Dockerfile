@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.6
 
-FROM gradle:8.10-jdk21 AS build
+FROM gradle:8.14-jdk21 AS build
 WORKDIR /workspace
 
 COPY settings.gradle build.gradle ./
