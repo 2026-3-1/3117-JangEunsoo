@@ -29,6 +29,9 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role = Role.STUDENT;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @Column(name = "created_at")
     @CreatedDate
     private LocalDateTime createdAt;
@@ -59,5 +62,17 @@ public class User {
 
     public boolean isAdmin() {
         return this.role == Role.ADMIN;
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
+
+    public void activate() {
+        this.active = true;
+    }
+
+    public boolean isActive() {
+        return this.active;
     }
 }

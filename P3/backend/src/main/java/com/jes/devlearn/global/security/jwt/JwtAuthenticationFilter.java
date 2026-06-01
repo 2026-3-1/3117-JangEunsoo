@@ -33,10 +33,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Role tokenRole = tokenProvider.getRole(token);
                 UserPrincipal userPrincipal = customUserDetailsService.loadUserById(userId, tokenRole);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+                // 비활성화된 계정은 인증 컨텍스트를 설정하지 않는다 (관리자 정지 즉시 반영)
+                if (userPrincipal.isEnabled()) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         }
 
