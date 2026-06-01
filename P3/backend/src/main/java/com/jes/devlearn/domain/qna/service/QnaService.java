@@ -19,6 +19,7 @@ import com.jes.devlearn.domain.notification.service.NotificationService;
 import com.jes.devlearn.domain.user.entity.Role;
 import com.jes.devlearn.domain.user.repository.UserRepository;
 import com.jes.devlearn.global.exception.CustomException;
+import com.jes.devlearn.global.security.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,7 +53,10 @@ public class QnaService {
             throw new CustomException(QnaErrorCode.NOT_ENROLLED);
         }
         QnaQuestion q = questionRepository.save(
-                new QnaQuestion(courseId, userId, req.title(), req.content(), req.isPrivate()));
+                new QnaQuestion(courseId, userId,
+                        HtmlSanitizer.sanitize(req.title()),
+                        HtmlSanitizer.sanitize(req.content()),
+                        req.isPrivate()));
         // 강사에게 새 질문 알림
         notificationService.enqueue(
                 "qna-q:" + q.getId(), "QNA_QUESTION", "Q&A 새 질문",
@@ -131,7 +135,7 @@ public class QnaService {
         if (!q.isAuthoredBy(userId)) {
             throw new CustomException(QnaErrorCode.NOT_QUESTION_OWNER);
         }
-        q.update(req.title(), req.content(), req.isPrivate());
+        q.update(HtmlSanitizer.sanitize(req.title()), HtmlSanitizer.sanitize(req.content()), req.isPrivate());
         return QnaQuestionResponse.summary(q, usernameOf(userId));
     }
 
@@ -164,7 +168,8 @@ public class QnaService {
             throw new CustomException(QnaErrorCode.NOT_ANSWERABLE);
         }
         QnaAnswer answer = answerRepository.save(
-                new QnaAnswer(questionId, userId, role == null ? "INSTRUCTOR" : role.name(), req.content()));
+                new QnaAnswer(questionId, userId, role == null ? "INSTRUCTOR" : role.name(),
+                        HtmlSanitizer.sanitize(req.content())));
         q.increaseAnswerCount();
         // 질문 작성자에게 답변 알림
         notificationService.enqueue(
@@ -184,7 +189,7 @@ public class QnaService {
         if (!answer.isAuthoredBy(userId) && role != Role.ADMIN) {
             throw new CustomException(QnaErrorCode.NOT_ANSWER_OWNER);
         }
-        answer.update(req.content());
+        answer.update(HtmlSanitizer.sanitize(req.content()));
         return QnaAnswerResponse.of(answer, usernameOf(answer.getAuthorId()));
     }
 

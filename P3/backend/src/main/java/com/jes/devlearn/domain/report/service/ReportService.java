@@ -8,6 +8,7 @@ import com.jes.devlearn.domain.report.repository.ReportRepository;
 import com.jes.devlearn.domain.notification.service.NotificationService;
 import com.jes.devlearn.domain.user.repository.UserRepository;
 import com.jes.devlearn.global.exception.CustomException;
+import com.jes.devlearn.global.security.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,7 @@ public class ReportService {
         }
 
         Report report = reportRepository.save(
-                new Report(reporterId, req.targetType(), req.targetId(), req.reason()));
+                new Report(reporterId, req.targetType(), req.targetId(), HtmlSanitizer.sanitize(req.reason())));
         log.info("[Report] reporterId={} {}#{} 신고 접수", reporterId, req.targetType(), req.targetId());
 
         // 관리자 채널 알림

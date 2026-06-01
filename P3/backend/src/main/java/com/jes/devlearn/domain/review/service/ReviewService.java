@@ -13,6 +13,7 @@ import com.jes.devlearn.domain.review.error.ReviewErrorCode;
 import com.jes.devlearn.domain.review.error.ReviewProgressGateException;
 import com.jes.devlearn.domain.review.repository.ReviewRepository;
 import com.jes.devlearn.global.exception.CustomException;
+import com.jes.devlearn.global.security.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +49,7 @@ public class ReviewService {
             throw new ReviewProgressGateException(rate, REQUIRED_PROGRESS_RATE);
         }
 
-        Review review = reviewRepository.save(new Review(userId, dto.courseId(), dto.rating(), dto.comment()));
+        Review review = reviewRepository.save(new Review(userId, dto.courseId(), dto.rating(), HtmlSanitizer.sanitize(dto.comment())));
         return ReviewResponseDTO.from(review);
     }
 
