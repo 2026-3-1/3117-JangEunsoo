@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "enrollments",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "course_id"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "course_id"}),
+        indexes = @Index(name = "idx_enrollments_course", columnList = "course_id")
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
