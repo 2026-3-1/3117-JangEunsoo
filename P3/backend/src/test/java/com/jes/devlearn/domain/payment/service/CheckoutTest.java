@@ -39,6 +39,8 @@ class CheckoutTest {
     @Mock private EnrollmentRepository enrollmentRepository;
     @Mock private CartItemRepository cartItemRepository;
     @Mock private MockPaymentGateway mockPaymentGateway;
+    @Mock private com.jes.devlearn.domain.course.repository.CourseRepository courseRepository;
+    @Mock private com.jes.devlearn.domain.notification.service.NotificationService notificationService;
 
     @InjectMocks
     private PaymentService paymentService;

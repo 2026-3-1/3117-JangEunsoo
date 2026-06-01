@@ -15,6 +15,7 @@ import com.jes.devlearn.domain.qna.entity.QnaQuestion;
 import com.jes.devlearn.domain.qna.error.QnaErrorCode;
 import com.jes.devlearn.domain.qna.repository.QnaAnswerRepository;
 import com.jes.devlearn.domain.qna.repository.QnaQuestionRepository;
+import com.jes.devlearn.domain.notification.service.NotificationService;
 import com.jes.devlearn.domain.user.entity.Role;
 import com.jes.devlearn.domain.user.repository.UserRepository;
 import com.jes.devlearn.global.exception.CustomException;
@@ -38,6 +39,7 @@ public class QnaService {
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     // ---------------------------------------------------------------------
     // 질문 작성: 해당 강의 수강생만 (강사 본인/관리자도 수강 시 가능)
@@ -51,6 +53,11 @@ public class QnaService {
         }
         QnaQuestion q = questionRepository.save(
                 new QnaQuestion(courseId, userId, req.title(), req.content(), req.isPrivate()));
+        // 강사에게 새 질문 알림
+        notificationService.enqueue(
+                "qna-q:" + q.getId(), "QNA_QUESTION", "Q&A 새 질문",
+                String.format("'%s' 강의에 새 질문이 등록되었습니다: %s (강사 #%s)",
+                        course.getTitle(), req.title(), course.getInstructorId()));
         return QnaQuestionResponse.summary(q, usernameOf(userId));
     }
 
@@ -159,6 +166,11 @@ public class QnaService {
         QnaAnswer answer = answerRepository.save(
                 new QnaAnswer(questionId, userId, role == null ? "INSTRUCTOR" : role.name(), req.content()));
         q.increaseAnswerCount();
+        // 질문 작성자에게 답변 알림
+        notificationService.enqueue(
+                "qna-a:" + answer.getId(), "QNA_ANSWER", "Q&A 답변 등록",
+                String.format("내 질문 '%s'에 답변이 등록되었습니다. (질문자 #%d)",
+                        q.getTitle(), q.getAuthorId()));
         return QnaAnswerResponse.of(answer, usernameOf(userId));
     }
 

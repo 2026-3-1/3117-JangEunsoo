@@ -16,6 +16,9 @@ import com.jes.devlearn.domain.payment.entity.PaymentStatus;
 import com.jes.devlearn.domain.payment.error.PaymentErrorCode;
 import com.jes.devlearn.domain.payment.gateway.MockPaymentGateway;
 import com.jes.devlearn.domain.payment.repository.PaymentRepository;
+import com.jes.devlearn.domain.course.entity.Course;
+import com.jes.devlearn.domain.course.repository.CourseRepository;
+import com.jes.devlearn.domain.notification.service.NotificationService;
 import com.jes.devlearn.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,8 @@ public class PaymentService {
     private final EnrollmentRepository enrollmentRepository;
     private final CartItemRepository cartItemRepository;
     private final MockPaymentGateway mockPaymentGateway;
+    private final CourseRepository courseRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public PaymentResponse checkout(Long userId, Long orderId, boolean simulateFailure) {
@@ -63,6 +68,7 @@ public class PaymentService {
         for (OrderItem item : items) {
             if (!enrollmentRepository.existsByUserIdAndCourseId(userId, item.getCourseId())) {
                 enrollmentRepository.save(new Enrollment(userId, item.getCourseId()));
+                notifyNewEnrollment(userId, item);
             }
         }
 
@@ -76,5 +82,16 @@ public class PaymentService {
                 .filter(OrderItem::isActive)
                 .mapToLong(OrderItem::getPriceSnapshot)
                 .sum();
+    }
+
+    private void notifyNewEnrollment(Long userId, OrderItem item) {
+        // dedupKey: 사용자×강의 단위 — 동일 결제 재처리 시 중복 알림 방지
+        String dedupKey = "enroll:" + userId + ":" + item.getCourseId();
+        Long instructorId = courseRepository.findById(item.getCourseId())
+                .map(Course::getInstructorId).orElse(null);
+        String message = String.format("'%s' 강의에 새 수강생(사용자 #%d)이 결제로 등록되었습니다.%s",
+                item.getCourseTitleSnapshot(), userId,
+                instructorId == null ? "" : " (강사 #" + instructorId + ")");
+        notificationService.enqueue(dedupKey, "NEW_ENROLLMENT", "신규 수강·결제", message);
     }
 }

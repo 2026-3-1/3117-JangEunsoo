@@ -36,6 +36,7 @@ class QnaServiceTest {
     @Mock private CourseRepository courseRepository;
     @Mock private EnrollmentRepository enrollmentRepository;
     @Mock private com.jes.devlearn.domain.user.repository.UserRepository userRepository;
+    @Mock private com.jes.devlearn.domain.notification.service.NotificationService notificationService;
 
     @InjectMocks
     private QnaService qnaService;
