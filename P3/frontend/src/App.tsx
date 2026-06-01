@@ -18,6 +18,12 @@ import CheckoutPage from './pages/CheckoutPage'
 import OrdersPage from './pages/OrdersPage'
 import OrderDetailPage from './pages/OrderDetailPage'
 import MyBookmarksPage from './pages/MyBookmarksPage'
+import CourseQnaPage from './pages/CourseQnaPage'
+import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminCoursesPage from './pages/admin/AdminCoursesPage'
+import AdminOrdersPage from './pages/admin/AdminOrdersPage'
+import AdminReportsPage from './pages/admin/AdminReportsPage'
 
 function App() {
   return (
@@ -104,6 +110,56 @@ function App() {
             <ProtectedRoute>
               <OrderDetailPage />
             </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/courses/:id/qna"
+          element={
+            <ProtectedRoute>
+              <CourseQnaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <RoleGuard allow={['ADMIN']} fallback="/courses">
+              <AdminDashboardPage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <RoleGuard allow={['ADMIN']} fallback="/courses">
+              <AdminUsersPage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/admin/courses"
+          element={
+            <RoleGuard allow={['ADMIN']} fallback="/courses">
+              <AdminCoursesPage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <RoleGuard allow={['ADMIN']} fallback="/courses">
+              <AdminOrdersPage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <RoleGuard allow={['ADMIN']} fallback="/courses">
+              <AdminReportsPage />
+            </RoleGuard>
           }
         />
 

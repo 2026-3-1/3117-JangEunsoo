@@ -189,12 +189,20 @@ export default function CourseDetailPage() {
                 <span>✓</span>
                 <span className="text-sm font-medium">수강 중인 강의입니다</span>
               </div>
-              <button
-                onClick={() => navigate(`/courses/${course.id}/learn/${enrollment.id}`)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-medium transition-colors"
-              >
-                학습하기
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/courses/${course.id}/qna`)}
+                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm font-medium transition-colors"
+                >
+                  Q&amp;A
+                </button>
+                <button
+                  onClick={() => navigate(`/courses/${course.id}/learn/${enrollment.id}`)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-medium transition-colors"
+                >
+                  학습하기
+                </button>
+              </div>
             </div>
           ) : isFree ? (
             <button

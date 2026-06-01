@@ -1,6 +1,6 @@
 import api from './index'
 
-export type Role = 'STUDENT' | 'INSTRUCTOR'
+export type Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN'
 
 export interface AuthResponse {
   accessToken: string

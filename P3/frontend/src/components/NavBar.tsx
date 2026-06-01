@@ -66,6 +66,14 @@ export default function NavBar() {
               강사 콘솔
             </Link>
           )}
+          {role === 'ADMIN' && (
+            <Link
+              to="/admin"
+              className="text-sm font-medium text-amber-400 hover:text-amber-300"
+            >
+              관리자 콘솔
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-3 text-sm">
           {username ? (
@@ -73,6 +81,7 @@ export default function NavBar() {
               <span className="text-gray-400">
                 {username}
                 {role === 'INSTRUCTOR' && <span className="ml-1 text-blue-400">(강사)</span>}
+                {role === 'ADMIN' && <span className="ml-1 text-amber-400">(관리자)</span>}
               </span>
               <button
                 onClick={handleLogout}
