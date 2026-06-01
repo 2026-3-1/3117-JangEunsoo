@@ -46,6 +46,17 @@ public class RefundService {
     }
 
     @Transactional
+    public OrderResponse refundByAdmin(Long orderId, List<Long> orderItemIds, RefundReason reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException(OrderErrorCode.ORDER_NOT_FOUND));
+
+        if (order.getStatus() != OrderStatus.PAID && order.getStatus() != OrderStatus.PARTIAL_REFUNDED) {
+            throw new CustomException(OrderErrorCode.ORDER_NOT_REFUNDABLE);
+        }
+        return performRefund(order, orderItemIds, reason == null ? RefundReason.OTHER : reason);
+    }
+
+    @Transactional
     public void refundForCourseCancellation(Order order) {
         if (order.getStatus() != OrderStatus.PAID && order.getStatus() != OrderStatus.PARTIAL_REFUNDED) {
             return;

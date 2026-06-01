@@ -33,4 +33,13 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     long countByInstructorIdAndPublishStatus(Long instructorId, PublishStatus publishStatus);
 
     List<Course> findAllByInstructorIdAndPublishStatus(Long instructorId, PublishStatus publishStatus);
+
+    @Query("SELECT c FROM Course c WHERE " +
+           "(:status IS NULL OR c.publishStatus = :status) AND " +
+           "(:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Course> findAllForAdmin(
+            @Param("status") PublishStatus status,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 }

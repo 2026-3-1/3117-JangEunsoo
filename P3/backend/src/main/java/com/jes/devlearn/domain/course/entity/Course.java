@@ -49,6 +49,10 @@ public class Course {
     @Column(nullable = false)
     private Long price = 0L;
 
+    // 관리자 모더레이션: 차단 사유 (null이면 차단되지 않음). 차단 시 publish_status는 ARCHIVED로 전이
+    @Column(name = "blocked_reason", length = 500)
+    private String blockedReason;
+
     private LocalDateTime deletedAt;
 
     public Course(Long categoryId, String title, String description, String difficulty, String instructorName) {
@@ -121,5 +125,23 @@ public class Course {
 
     public boolean isFree() {
         return this.price == null || this.price == 0L;
+    }
+
+    /** 관리자 차단: ARCHIVED로 전이하고 사유를 기록 */
+    public void blockByAdmin(String reason) {
+        this.publishStatus = PublishStatus.ARCHIVED;
+        this.blockedReason = reason;
+    }
+
+    /** 관리자 차단 해제: 사유를 비우고 DRAFT로 되돌림 (재발행은 강사 책임) */
+    public void unblockByAdmin() {
+        this.blockedReason = null;
+        if (this.publishStatus == PublishStatus.ARCHIVED) {
+            this.publishStatus = PublishStatus.DRAFT;
+        }
+    }
+
+    public boolean isBlocked() {
+        return this.blockedReason != null;
     }
 }
