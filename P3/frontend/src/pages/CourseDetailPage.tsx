@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getCourse, type CourseDetailResponse } from '../api/courses'
 import { enroll, getMyEnrollments, type EnrollmentResponse } from '../api/enrollments'
 import { getReviews, createReview, deleteReview, type ReviewResponse } from '../api/reviews'
-import { addToCart } from '../api/cart'
+import { addToCart, getCart } from '../api/cart'
 import NavBar from '../components/NavBar'
 
 const DIFFICULTY_LABEL: Record<string, string> = {
@@ -21,6 +21,8 @@ export default function CourseDetailPage() {
   const [reviews, setReviews] = useState<ReviewResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [enrolling, setEnrolling] = useState(false)
+  const [addingToCart, setAddingToCart] = useState(false)
+  const [inCart, setInCart] = useState(false)
   const [error, setError] = useState('')
   const [actionMsg, setActionMsg] = useState('')
 
@@ -43,6 +45,13 @@ export default function CourseDetailPage() {
         const found = myEnrollments.find((e) => e.courseId === courseData.id) ?? null
         setEnrollment(found)
         setReviews(reviewData)
+        // 이미 장바구니에 담긴 강의면 버튼을 담긴 상태로 표시 (실패해도 무시)
+        try {
+          const cart = await getCart()
+          if (cart.items.some((item) => item.courseId === courseData.id)) setInCart(true)
+        } catch {
+          // 장바구니 조회 실패는 상세 페이지 표시를 막지 않음
+        }
       } catch {
         setError('강의 정보를 불러오지 못했습니다.')
       } finally {
@@ -72,20 +81,25 @@ export default function CourseDetailPage() {
   }
 
   const handleAddToCart = async () => {
-    if (!course) return
+    if (!course || addingToCart || inCart) return
     setActionMsg('')
+    setAddingToCart(true)
     try {
       await addToCart(course.id)
+      setInCart(true)
       setActionMsg('장바구니에 담았습니다.')
     } catch (err: unknown) {
       const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code
       if (code === 'ALREADY_IN_CART' || code === 'CART_DUPLICATE') {
+        setInCart(true)
         setActionMsg('이미 장바구니에 담겨있습니다.')
       } else if (code === 'ALREADY_ENROLLED') {
         setActionMsg('이미 수강 중인 강의입니다.')
       } else {
         setActionMsg('장바구니 담기에 실패했습니다.')
       }
+    } finally {
+      setAddingToCart(false)
     }
   }
 
@@ -216,9 +230,14 @@ export default function CourseDetailPage() {
             <div className="flex gap-2">
               <button
                 onClick={handleAddToCart}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-medium transition-colors"
+                disabled={addingToCart || inCart}
+                className={`flex-1 py-3 rounded-xl font-medium transition-colors ${
+                  inCart
+                    ? 'bg-emerald-700 text-emerald-100 cursor-default'
+                    : 'bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900 disabled:text-blue-400'
+                }`}
               >
-                장바구니 담기
+                {inCart ? '✓ 장바구니에 담음' : addingToCart ? '담는 중...' : '장바구니 담기'}
               </button>
               <button
                 onClick={() => navigate('/cart')}
