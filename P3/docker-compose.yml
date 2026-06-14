@@ -19,9 +19,8 @@ services:
       retries: 20
 
   backend:
-    # CD(GHCR pull) 시 BACKEND_IMAGE 지정 → docker compose pull 사용.
-    # 로컬은 미지정 시 build로 fallback.
-    image: ${BACKEND_IMAGE:-devlearn-p3-backend:local}
+    # 배포는 EC2에서 직접 빌드(docker compose up -d --build). 빌드 결과에 붙는 로컬 태그.
+    image: devlearn-p3-backend:local
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -51,7 +50,7 @@ services:
       - "8080:8080"
 
   frontend:
-    image: ${FRONTEND_IMAGE:-devlearn-p3-frontend:local}
+    image: devlearn-p3-frontend:local
     build:
       context: ./frontend
       dockerfile: Dockerfile

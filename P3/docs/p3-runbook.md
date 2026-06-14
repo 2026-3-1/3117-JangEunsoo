@@ -54,20 +54,20 @@ curl -s http://localhost:8080/actuator/health   # {"status":"UP"}
 - **CI** (`.github/workflows/p3-ci.yml`): `P3/**` 변경 PR·push마다
   백엔드 `./gradlew build`(MySQL service 컨테이너 + 테스트) + 프론트 `npm run lint`·`build` 실행.
 - **CD** (`.github/workflows/cd.yml`): `main` push·`v*` 태그·수동(`workflow_dispatch`) 트리거.
-  1. `images` job — GHCR에 `p3-backend`·`p3-frontend` 이미지 빌드·푸시(`GITHUB_TOKEN`, 별도 시크릿 불필요).
-  2. `deploy` job — 저장소 **Variable** `DEPLOY_ENABLED=true`일 때만 동작.
-     password-SSH로 EC2 접속 → `docker compose pull && up -d`.
+  저장소 **Variable** `DEPLOY_ENABLED=true`일 때만 `deploy` job 실행.
+  password-SSH로 EC2 접속 → `git fetch + reset --hard origin/main` → `docker compose up -d --build`
+  → `docker system prune -af`. **EC2에서 직접 빌드**하므로 이미지 레지스트리·인증 불필요.
 
 **EC2 자동배포 활성화 절차(사용자 수행):**
 1. GitHub → 저장소 → Settings → Secrets and variables → Actions
 2. **Secrets** 등록: `EC2_HOST`(퍼블릭 IP/도메인), `EC2_USER`, `EC2_PASSWORD`
-3. **Variables** 등록: `DEPLOY_ENABLED=true` (+ 선택 `VITE_API_URL`, `VITE_TOSS_CLIENT_KEY`)
-4. EC2에 사전 준비: `git clone` → `~/devlearn`, `P3/.env` 작성, Docker·compose 설치
-5. main에 push하면 GHCR 푸시 후 EC2가 해당 이미지를 pull해 기동
-   (compose의 `BACKEND_IMAGE`/`FRONTEND_IMAGE`를 CD가 GHCR 태그로 주입)
+3. **Variables** 등록: `DEPLOY_ENABLED=true`
+4. EC2에 사전 준비: `git clone` → `~/devlearn`(즉 `~/devlearn/P3/`에 compose), `P3/.env` 작성
+   (`VITE_API_URL`·`VITE_TOSS_CLIENT_KEY` 포함 — 프론트는 빌드 시 주입), Docker·compose 설치
+5. main에 push하면 EC2가 최신 코드로 재빌드·기동
 
 > `DEPLOY_ENABLED` 미설정 시 `deploy` job은 skip되어 CI/CD가 항상 그린.
-> 수동 배포는 §2의 `docker compose up -d --build`로 대체 가능.
+> 수동 배포도 동일: EC2에서 `git pull && docker compose up -d --build`.
 
 ## 3. 헬스체크 / 모니터링
 
