@@ -14,11 +14,16 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// 로그인/회원가입/토큰갱신 요청의 401은 인터셉터가 가로채지 않는다.
+// (가로채면 로그인 실패 시 페이지가 /login으로 리다이렉트되어 에러 메시지가 사라진다)
+const isAuthEndpoint = (url?: string) =>
+  !!url && (url.includes('/auth/login') || url.includes('/auth/signup') || url.includes('/auth/refresh'))
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && original && !original._retry && !isAuthEndpoint(original.url)) {
       original._retry = true
       const refreshToken = localStorage.getItem('refreshToken')
       if (refreshToken) {

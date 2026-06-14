@@ -7,15 +7,14 @@ import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import javax.naming.AuthenticationException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,9 +35,9 @@ public class GlobalExceptionHandler {
                 .body(GlobalApiResponse.fail(HttpStatus.BAD_REQUEST, msg));
     }
 
-    // login authentication error
+    // login authentication error (BadCredentials, InternalAuthenticationServiceException 등 모두 포함)
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<GlobalApiResponse<Void>> handleBadCredentials(BadCredentialsException ex){
+    public ResponseEntity<GlobalApiResponse<Void>> handleAuthentication(AuthenticationException ex){
         log.warn("[{}] {}", ex.getClass().getSimpleName(), ex.getMessage());
 
         return ResponseEntity
