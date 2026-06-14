@@ -6,7 +6,7 @@ export type RefundReason = 'USER_REQUEST' | 'COURSE_CANCELLED' | 'DUPLICATE_PAYM
 export interface PaymentResult {
   id: number
   orderId: number
-  method: 'MOCK_CARD'
+  method: 'MOCK_CARD' | 'TOSS'
   status: 'SUCCESS' | 'FAILED'
   amount: number
   mockTransactionId: string | null
@@ -15,6 +15,16 @@ export interface PaymentResult {
 
 export const checkout = async (orderId: number, simulateFailure = false): Promise<PaymentResult> => {
   const { data } = await api.post('/payments/checkout', { orderId }, { params: { simulateFailure } })
+  return data.data
+}
+
+// Toss 결제 성공 콜백 후 승인 요청. amount는 서버에서 재계산·대조(위변조 차단).
+export const confirmTossPayment = async (params: {
+  orderId: number
+  paymentKey: string
+  amount: number
+}): Promise<PaymentResult> => {
+  const { data } = await api.post('/payments/confirm', params)
   return data.data
 }
 

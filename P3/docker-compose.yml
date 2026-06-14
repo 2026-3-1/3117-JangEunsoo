@@ -19,6 +19,9 @@ services:
       retries: 20
 
   backend:
+    # CD(GHCR pull) 시 BACKEND_IMAGE 지정 → docker compose pull 사용.
+    # 로컬은 미지정 시 build로 fallback.
+    image: ${BACKEND_IMAGE:-devlearn-p3-backend:local}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -42,16 +45,19 @@ services:
       NOTIFICATION_CHANNEL: ${NOTIFICATION_CHANNEL:-DISCORD}
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
       NOTIFICATION_DISPATCH_INTERVAL_MS: ${NOTIFICATION_DISPATCH_INTERVAL_MS:-15000}
+      TOSS_SECRET_KEY: ${TOSS_SECRET_KEY:-}
       JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m}
     ports:
       - "8080:8080"
 
   frontend:
+    image: ${FRONTEND_IMAGE:-devlearn-p3-frontend:local}
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
+        VITE_TOSS_CLIENT_KEY: ${VITE_TOSS_CLIENT_KEY:-}
     container_name: devlearn-frontend
     restart: unless-stopped
     depends_on:
