@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { loadTossPayments } from '@tosspayments/tosspayments-sdk'
+import { loadTossPayments, ANONYMOUS } from '@tosspayments/tosspayments-sdk'
 import NavBar from '../components/NavBar'
 import { getOrder, type Order } from '../api/order'
 import { checkout } from '../api/payment'
-import { useAuth } from '../context/useAuth'
 
 const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY as string | undefined
 
 export default function CheckoutPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { userId } = useAuth()
   const [order, setOrder] = useState<Order | null>(null)
   const [error, setError] = useState('')
   const [paying, setPaying] = useState(false)
@@ -30,7 +28,8 @@ export default function CheckoutPage() {
     setError('')
     try {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY)
-      const payment = tossPayments.payment({ customerKey: `user-${userId ?? 'guest'}` })
+      // 테스트/게스트 결제는 ANONYMOUS 사용 (사용자별 customerKey 등록 불필요).
+      const payment = tossPayments.payment({ customerKey: ANONYMOUS })
       const origin = window.location.origin
       await payment.requestPayment({
         method: 'CARD',
@@ -46,9 +45,14 @@ export default function CheckoutPage() {
         card: { flowMode: 'DEFAULT' },
       })
     } catch (err: unknown) {
-      // 사용자가 결제창을 닫으면 SDK가 reject — 조용히 복귀
-      const msg = (err as { message?: string })?.message ?? ''
-      if (!/cancel|close|중단|취소/i.test(msg)) setError('결제창을 여는 중 오류가 발생했습니다.')
+      // 결제창 닫힘(사용자 취소)은 무시, 그 외 오류는 메시지 노출.
+      const e = err as { code?: string; message?: string }
+      const msg = e?.message ?? ''
+      const isCancel = e?.code === 'USER_CANCEL' || /cancel|close|중단|취소|닫/i.test(msg)
+      if (!isCancel) {
+        console.error('[Toss requestPayment]', err)
+        setError(`결제창 오류: ${msg || '알 수 없는 오류'}`)
+      }
       setPaying(false)
     }
   }
