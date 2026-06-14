@@ -1,16 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { fetchMe, type Role } from '../api/auth'
-
-interface AuthState {
-  userId: number | null
-  username: string | null
-  role: Role | null
-  loading: boolean
-  refresh: () => Promise<void>
-  setLoggedOut: () => void
-}
-
-const AuthContext = createContext<AuthState | null>(null)
+import { AuthContext } from './useAuth'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<number | null>(null)
@@ -58,10 +48,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth(): AuthState {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
 }

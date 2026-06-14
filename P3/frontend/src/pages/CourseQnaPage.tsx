@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import NavBar from '../components/NavBar'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { getCourse, type CourseDetailResponse } from '../api/courses'
 import { qnaApi, reportApi, type QnaQuestion } from '../api/qna'
 

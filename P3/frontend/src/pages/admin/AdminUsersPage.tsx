@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import AdminLayout from './AdminLayout'
 import { adminApi, type AdminUser } from '../../api/admin'
+import { extractMessage } from './adminUtils'
 import type { Role } from '../../api/auth'
 
 const roleLabel: Record<Role, string> = { STUDENT: '학생', INSTRUCTOR: '강사', ADMIN: '관리자' }
@@ -25,6 +26,7 @@ export default function AdminUsersPage() {
   }, [keyword, roleFilter, page])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [load])
 
@@ -179,12 +181,4 @@ export function Pager({
       </button>
     </div>
   )
-}
-
-export function extractMessage(e: unknown): string {
-  if (typeof e === 'object' && e && 'response' in e) {
-    const resp = (e as { response?: { data?: { message?: string } } }).response
-    if (resp?.data?.message) return resp.data.message
-  }
-  return '요청을 처리하지 못했습니다.'
 }

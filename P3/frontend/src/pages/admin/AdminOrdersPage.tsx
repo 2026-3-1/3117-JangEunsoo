@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import AdminLayout from './AdminLayout'
 import { adminApi, type AdminOrder, type OrderStatus } from '../../api/admin'
-import { Pager, extractMessage } from './AdminUsersPage'
+import { Pager } from './AdminUsersPage'
+import { extractMessage } from './adminUtils'
 
 const won = (n: number) => `${n.toLocaleString()}원`
 const statusLabel: Record<OrderStatus, string> = {
@@ -31,6 +32,7 @@ export default function AdminOrdersPage() {
   }, [statusFilter, page])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [load])
 

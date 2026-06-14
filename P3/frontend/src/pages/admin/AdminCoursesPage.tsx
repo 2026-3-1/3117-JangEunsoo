@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import AdminLayout from './AdminLayout'
 import { adminApi, type AdminCourse, type PublishStatus } from '../../api/admin'
-import { Pager, extractMessage } from './AdminUsersPage'
+import { Pager } from './AdminUsersPage'
+import { extractMessage } from './adminUtils'
 
 const statusLabel: Record<PublishStatus, string> = {
   DRAFT: '임시저장',
@@ -29,6 +30,7 @@ export default function AdminCoursesPage() {
   }, [keyword, statusFilter, page])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [load])
 

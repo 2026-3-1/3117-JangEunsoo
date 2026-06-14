@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import AdminLayout from './AdminLayout'
 import { adminApi, type AdminReport, type ReportStatus, type ReportTargetType } from '../../api/admin'
-import { Pager, extractMessage } from './AdminUsersPage'
+import { Pager } from './AdminUsersPage'
+import { extractMessage } from './adminUtils'
 
 const statusLabel: Record<ReportStatus, string> = {
   PENDING: '미처리',
@@ -33,6 +34,7 @@ export default function AdminReportsPage() {
   }, [statusFilter, page])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [load])
 
