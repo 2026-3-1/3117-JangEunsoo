@@ -1,33 +1,41 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import LoginPage from './pages/LoginPage'
-import SignupPage from './pages/SignupPage'
-import CoursesPage from './pages/CoursesPage'
-import CourseDetailPage from './pages/CourseDetailPage'
-import MyCoursesPage from './pages/MyCoursesPage'
-import LearningPage from './pages/LearningPage'
+// 전 라우트 게이트(소형)는 eager 유지
 import ProtectedRoute from './components/ProtectedRoute'
 import RoleGuard from './components/RoleGuard'
-import InstructorDashboardPage from './pages/instructor/InstructorDashboardPage'
-import InstructorCourseListPage from './pages/instructor/InstructorCourseListPage'
-import InstructorCourseEditorPage from './pages/instructor/InstructorCourseEditorPage'
-import InstructorCourseStudentsPage from './pages/instructor/InstructorCourseStudentsPage'
-import InstructorProfileEditPage from './pages/instructor/InstructorProfileEditPage'
-import InstructorPublicProfilePage from './pages/InstructorPublicProfilePage'
-import CartPage from './pages/CartPage'
-import CheckoutPage from './pages/CheckoutPage'
-import OrdersPage from './pages/OrdersPage'
-import OrderDetailPage from './pages/OrderDetailPage'
-import MyBookmarksPage from './pages/MyBookmarksPage'
-import CourseQnaPage from './pages/CourseQnaPage'
-import AdminDashboardPage from './pages/admin/AdminDashboardPage'
-import AdminUsersPage from './pages/admin/AdminUsersPage'
-import AdminCoursesPage from './pages/admin/AdminCoursesPage'
-import AdminOrdersPage from './pages/admin/AdminOrdersPage'
-import AdminReportsPage from './pages/admin/AdminReportsPage'
+import PageLoader from './components/PageLoader'
+
+// 페이지는 라우트별 코드 스플리팅 (React.lazy) — 진입 시점에 청크 로드
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const SignupPage = lazy(() => import('./pages/SignupPage'))
+const CoursesPage = lazy(() => import('./pages/CoursesPage'))
+const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'))
+const MyCoursesPage = lazy(() => import('./pages/MyCoursesPage'))
+const LearningPage = lazy(() => import('./pages/LearningPage'))
+const InstructorDashboardPage = lazy(() => import('./pages/instructor/InstructorDashboardPage'))
+const InstructorCourseListPage = lazy(() => import('./pages/instructor/InstructorCourseListPage'))
+const InstructorCourseEditorPage = lazy(() => import('./pages/instructor/InstructorCourseEditorPage'))
+const InstructorCourseStudentsPage = lazy(() => import('./pages/instructor/InstructorCourseStudentsPage'))
+const InstructorProfileEditPage = lazy(() => import('./pages/instructor/InstructorProfileEditPage'))
+const InstructorPublicProfilePage = lazy(() => import('./pages/InstructorPublicProfilePage'))
+const CartPage = lazy(() => import('./pages/CartPage'))
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
+const CheckoutSuccessPage = lazy(() => import('./pages/CheckoutSuccessPage'))
+const CheckoutFailPage = lazy(() => import('./pages/CheckoutFailPage'))
+const OrdersPage = lazy(() => import('./pages/OrdersPage'))
+const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'))
+const MyBookmarksPage = lazy(() => import('./pages/MyBookmarksPage'))
+const CourseQnaPage = lazy(() => import('./pages/CourseQnaPage'))
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
+const AdminCoursesPage = lazy(() => import('./pages/admin/AdminCoursesPage'))
+const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'))
+const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'))
 
 function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -93,6 +101,22 @@ function App() {
           element={
             <ProtectedRoute>
               <CheckoutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout/success"
+          element={
+            <ProtectedRoute>
+              <CheckoutSuccessPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout/fail"
+          element={
+            <ProtectedRoute>
+              <CheckoutFailPage />
             </ProtectedRoute>
           }
         />
@@ -214,6 +238,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/courses" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }
