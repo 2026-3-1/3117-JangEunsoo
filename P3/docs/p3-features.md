@@ -100,10 +100,31 @@ P3는 P2(강사 역할·모의 결제·이어듣기·리뷰 게이트) 위에 **
 
 ---
 
-## 7. 성능
+## 7. 결제 — Toss Payments 연동
+
+- **게이트웨이 추상화**: `PaymentGateway` 인터페이스 → `TossPaymentGateway`(실연동) / `MockPaymentGateway`(fallback).
+  `PaymentGatewayRouter`가 `TOSS_SECRET_KEY` 유무로 선택 → 키 미설정 환경(개발·CI·시연)에서도 결제 플로우 유지.
+- **승인 플로우**: 프론트 Toss SDK 결제창 → `successUrl` 리다이렉트(`paymentKey`·`orderId`·`amount`)
+  → `POST /api/payments/confirm` → 서버가 주문 소유·`PENDING` 검증 → **금액 서버 재계산**
+  → 클라 amount와 대조(불일치 `422 PAYMENT_AMOUNT_MISMATCH`) → Toss `/v1/payments/confirm`(Basic auth)
+  → `Payment(method=TOSS, SUCCESS)` 저장 + enrollment 생성 + 장바구니 비움 + 알림.
+- **금액 신뢰 경계**: 결제 금액은 `order_items.price_snapshot` 합으로만 산정. 클라이언트 값은 위변조 검증용.
+- **하위호환**: 기존 `POST /api/payments/checkout`(모의 결제·`simulateFailure`) 경로 유지.
+- 환경변수: `TOSS_SECRET_KEY`(백엔드), `VITE_TOSS_CLIENT_KEY`(프론트 빌드 주입).
+
+| 메서드·경로 | 설명 |
+|------------|------|
+| `POST /api/payments/confirm` | Toss 결제 승인(`{orderId, paymentKey, amount}`) |
+| `POST /api/payments/checkout` | 모의 결제(하위호환, `simulateFailure` 지원) |
+
+---
+
+## 8. 성능
 
 - 신규 테이블 인덱스: `qna_questions(course_id, author_id)`, `qna_answers(question_id)`,
   `notification_outbox(status)`, `reports(reporter_id,target_type,target_id UNIQUE)`
 - 기존 핫패스 인덱스 보강: `reviews(course_id, user_id)`, `enrollments(course_id)`
 - 운영 기본 `spring.jpa.show-sql=false`(환경변수 토글)
 - 목록 API 페이징(관리자 사용자/강의/주문/신고, Q&A)
+- **프론트 코드 스플리팅**: `App.tsx`의 페이지를 `React.lazy` + 단일 `Suspense`(PageLoader)로
+  라우트별 청크 분리 — 초기 번들 370kB → 메인 191kB로 축소(라우트 진입 시 해당 청크만 로드).

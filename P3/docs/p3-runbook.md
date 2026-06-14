@@ -1,6 +1,7 @@
 # P3 운영 Runbook (DevLearn)
 
-배포·롤백·장애 대응·모니터링 절차 요약. (배포 인프라는 P2의 `docker-compose.yml` + EC2 기준)
+배포·롤백·장애 대응·모니터링 절차 요약. (배포 인프라는 `P3/docker-compose.yml` + EC2 기준,
+자동배포는 GitHub Actions `cd.yml` — GHCR 이미지 푸시 후 EC2 pull)
 
 ## 1. 환경변수
 
@@ -16,9 +17,18 @@ NOTIFICATION_CHANNEL=DISCORD
 DISCORD_WEBHOOK_URL=<디스코드 채널 webhook URL>
 NOTIFICATION_DISPATCH_INTERVAL_MS=15000
 
+# 결제 (Toss Payments — 미설정 시 모의 결제로 동작)
+TOSS_SECRET_KEY=<test_sk_... 또는 live_sk_...>
+VITE_TOSS_CLIENT_KEY=<test_ck_... 또는 live_ck_...>   # 프론트 빌드 시 주입
+
 # 운영 튜닝
 JPA_SHOW_SQL=false
 ```
+
+> **결제 동작**: `TOSS_SECRET_KEY`가 있으면 백엔드가 Toss `/v1/payments/confirm`로 실제 승인.
+> 비어 있으면 `MockPaymentGateway`로 자동 fallback(개발·CI·시연). 금액은 항상 서버에서
+> `order_items.price_snapshot` 합으로 재계산하며, 클라이언트가 보낸 금액과 불일치 시
+> `422 PAYMENT_AMOUNT_MISMATCH`. 프론트는 `VITE_TOSS_CLIENT_KEY` 유무로 Toss 결제창 ↔ 모의 결제 버튼 분기.
 
 ## 2. 배포
 
@@ -36,8 +46,28 @@ docker compose up -d --build
 curl -s http://localhost:8080/actuator/health   # {"status":"UP"}
 ```
 
-신규 테이블(`reports`, `qna_questions`, `qna_answers`, `notification_outbox`)은
+신규 테이블(`reports`, `qna_questions`, `qna_answers`, `notification_outbox`, `payments`)은
 `ddl-auto=update`가 자동 생성. 별도 마이그레이션 불필요.
+
+### 2-1. CI/CD (GitHub Actions)
+
+- **CI** (`.github/workflows/p3-ci.yml`): `P3/**` 변경 PR·push마다
+  백엔드 `./gradlew build`(MySQL service 컨테이너 + 테스트) + 프론트 `npm run lint`·`build` 실행.
+- **CD** (`.github/workflows/cd.yml`): `main` push·`v*` 태그·수동(`workflow_dispatch`) 트리거.
+  1. `images` job — GHCR에 `p3-backend`·`p3-frontend` 이미지 빌드·푸시(`GITHUB_TOKEN`, 별도 시크릿 불필요).
+  2. `deploy` job — 저장소 **Variable** `DEPLOY_ENABLED=true`일 때만 동작.
+     password-SSH로 EC2 접속 → `docker compose pull && up -d`.
+
+**EC2 자동배포 활성화 절차(사용자 수행):**
+1. GitHub → 저장소 → Settings → Secrets and variables → Actions
+2. **Secrets** 등록: `EC2_HOST`(퍼블릭 IP/도메인), `EC2_USER`, `EC2_PASSWORD`
+3. **Variables** 등록: `DEPLOY_ENABLED=true` (+ 선택 `VITE_API_URL`, `VITE_TOSS_CLIENT_KEY`)
+4. EC2에 사전 준비: `git clone` → `~/devlearn`, `P3/.env` 작성, Docker·compose 설치
+5. main에 push하면 GHCR 푸시 후 EC2가 해당 이미지를 pull해 기동
+   (compose의 `BACKEND_IMAGE`/`FRONTEND_IMAGE`를 CD가 GHCR 태그로 주입)
+
+> `DEPLOY_ENABLED` 미설정 시 `deploy` job은 skip되어 CI/CD가 항상 그린.
+> 수동 배포는 §2의 `docker compose up -d --build`로 대체 가능.
 
 ## 3. 헬스체크 / 모니터링
 
