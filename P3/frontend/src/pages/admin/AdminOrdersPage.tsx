@@ -97,9 +97,9 @@ export default function AdminOrdersPage() {
               </div>
             </div>
             <ul className="mt-2 text-xs text-gray-500">
-              {o.items.map((it) => (
+              {(o.items ?? []).map((it) => (
                 <li key={it.id}>
-                  · {it.courseTitleSnapshot} — {won(it.priceSnapshot)}{' '}
+                  · {it.courseTitle} — {won(it.price)}{' '}
                   {it.status === 'REFUNDED' && <span className="text-red-400">[환불]</span>}
                 </li>
               ))}

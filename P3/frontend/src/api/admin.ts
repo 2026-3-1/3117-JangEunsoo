@@ -40,8 +40,8 @@ export interface AdminCourse {
 export interface AdminOrderItem {
   id: number
   courseId: number
-  courseTitleSnapshot: string
-  priceSnapshot: number
+  courseTitle: string
+  price: number
   status: string
 }
 
