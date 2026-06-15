@@ -58,15 +58,6 @@ export interface AdminOrder {
   items: AdminOrderItem[]
 }
 
-export interface SalesSummary {
-  grossRevenue: number
-  refundedAmount: number
-  netRevenue: number
-  paidOrderCount: number
-  refundedOrderCount: number
-  partialRefundedOrderCount: number
-}
-
 export interface AdminReport {
   id: number
   reporterId: number
@@ -98,10 +89,9 @@ export const adminApi = {
   unblockCourse: (courseId: number) =>
     unwrap<AdminCourse>(api.post(`/admin/courses/${courseId}/unblock`)),
 
-  // 주문/매출
+  // 주문
   listOrders: (params: { status?: OrderStatus; page?: number; size?: number }) =>
     unwrap<Page<AdminOrder>>(api.get('/admin/orders', { params })),
-  salesSummary: () => unwrap<SalesSummary>(api.get('/admin/orders/sales-summary')),
   forceRefund: (orderId: number, body?: { orderItemIds?: number[]; reason?: string }) =>
     unwrap<unknown>(api.post(`/admin/orders/${orderId}/refund`, body ?? {})),
 

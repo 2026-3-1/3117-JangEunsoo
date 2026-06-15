@@ -2,7 +2,6 @@ package com.jes.devlearn.domain.admin.service;
 
 import com.jes.devlearn.domain.admin.dto.response.AdminOrderPageResponse;
 import com.jes.devlearn.domain.admin.dto.response.AdminOrderResponse;
-import com.jes.devlearn.domain.admin.dto.response.AdminSalesSummaryResponse;
 import com.jes.devlearn.domain.order.dto.response.OrderItemResponse;
 import com.jes.devlearn.domain.order.dto.response.OrderResponse;
 import com.jes.devlearn.domain.order.entity.Order;
@@ -62,20 +61,6 @@ public class AdminOrderService {
 
         return new AdminOrderPageResponse(
                 content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
-    }
-
-    @Transactional(readOnly = true)
-    public AdminSalesSummaryResponse salesSummary() {
-        long gross = orderRepository.sumGrossRevenue();
-        long refunded = orderRepository.sumRefundedAmount();
-        return new AdminSalesSummaryResponse(
-                gross,
-                refunded,
-                gross - refunded,
-                orderRepository.countByStatus(OrderStatus.PAID),
-                orderRepository.countByStatus(OrderStatus.REFUNDED),
-                orderRepository.countByStatus(OrderStatus.PARTIAL_REFUNDED)
-        );
     }
 
     @Transactional

@@ -6,7 +6,7 @@ const tabs = [
   { to: '/admin', label: '대시보드', end: true },
   { to: '/admin/users', label: '사용자' },
   { to: '/admin/courses', label: '강의' },
-  { to: '/admin/orders', label: '주문/매출' },
+  { to: '/admin/orders', label: '주문' },
   { to: '/admin/reports', label: '신고' },
 ]
 

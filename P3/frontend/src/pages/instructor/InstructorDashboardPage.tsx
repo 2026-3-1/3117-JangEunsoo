@@ -32,6 +32,14 @@ export default function InstructorDashboardPage() {
 
         {data && (
           <>
+            <div className="bg-linear-to-br from-emerald-900/40 to-gray-900 border border-emerald-800/40 rounded-2xl p-6 mb-6">
+              <div className="text-sm text-emerald-300/80">내 강의 누적 매출</div>
+              <div className="text-4xl font-bold text-emerald-300 mt-2">
+                {data.totalRevenue.toLocaleString()}원
+              </div>
+              <div className="text-xs text-gray-500 mt-2">결제 완료(환불 제외) 기준</div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
               <Card label="전체 강의" value={data.totalCourses} hint={`발행 ${data.publishedCourses} · 임시 ${data.draftCourses} · 보관 ${data.archivedCourses}`} />
               <Card label="누적 수강생" value={data.totalEnrollments} />

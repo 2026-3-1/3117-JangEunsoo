@@ -38,6 +38,7 @@ export interface DashboardData {
   totalEnrollments: number
   totalReviews: number
   averageRating: number
+  totalRevenue: number
   recentEnrollments: Array<{
     enrollmentId: number
     courseId: number

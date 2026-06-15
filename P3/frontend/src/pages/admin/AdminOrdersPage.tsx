@@ -49,7 +49,7 @@ export default function AdminOrdersPage() {
   const refundable = (s: OrderStatus) => s === 'PAID' || s === 'PARTIAL_REFUNDED'
 
   return (
-    <AdminLayout title="주문/매출">
+    <AdminLayout title="주문">
       <div className="flex gap-2 mb-4">
         <select
           value={statusFilter}

@@ -1,7 +1,6 @@
 package com.jes.devlearn.domain.admin.controller;
 
 import com.jes.devlearn.domain.admin.dto.response.AdminOrderPageResponse;
-import com.jes.devlearn.domain.admin.dto.response.AdminSalesSummaryResponse;
 import com.jes.devlearn.domain.admin.service.AdminOrderService;
 import com.jes.devlearn.domain.order.dto.response.OrderResponse;
 import com.jes.devlearn.domain.order.entity.OrderStatus;
@@ -31,11 +30,6 @@ public class AdminOrderController {
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(GlobalApiResponse.success(adminOrderService.list(status, pageable)));
-    }
-
-    @GetMapping("/sales-summary")
-    public ResponseEntity<GlobalApiResponse<AdminSalesSummaryResponse>> salesSummary() {
-        return ResponseEntity.ok(GlobalApiResponse.success(adminOrderService.salesSummary()));
     }
 
     @PostMapping("/{orderId}/refund")

@@ -11,6 +11,7 @@ public record InstructorDashboardResponse(
         long totalEnrollments,
         long totalReviews,
         double averageRating,
+        long totalRevenue,
         List<RecentEnrollmentItem> recentEnrollments
 ) {
     public record RecentEnrollmentItem(

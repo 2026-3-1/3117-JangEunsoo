@@ -6,6 +6,7 @@ import com.jes.devlearn.domain.course.repository.CourseRepository;
 import com.jes.devlearn.domain.course.repository.LectureRepository;
 import com.jes.devlearn.domain.enrollment.entity.Enrollment;
 import com.jes.devlearn.domain.enrollment.repository.EnrollmentRepository;
+import com.jes.devlearn.domain.order.repository.OrderItemRepository;
 import com.jes.devlearn.domain.instructor.dto.response.InstructorCourseStudentsResponse;
 import com.jes.devlearn.domain.instructor.dto.response.InstructorDashboardResponse;
 import com.jes.devlearn.domain.progress.repository.LectureProgressRepository;
@@ -28,6 +29,7 @@ public class InstructorDashboardService {
 
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final OrderItemRepository orderItemRepository;
     private final ReviewRepository reviewRepository;
     private final LectureRepository lectureRepository;
     private final LectureProgressRepository lectureProgressRepository;
@@ -48,6 +50,8 @@ public class InstructorDashboardService {
         long totalReviews = courseIds.isEmpty() ? 0 : reviewRepository.countByCourseIdIn(courseIds);
         double averageRating = courseIds.isEmpty() ? 0.0
                 : (reviewRepository.avgRatingByCourseIds(courseIds) == null ? 0.0 : reviewRepository.avgRatingByCourseIds(courseIds));
+
+        long totalRevenue = courseIds.isEmpty() ? 0 : orderItemRepository.sumActiveRevenueByCourseIds(courseIds);
 
         List<Enrollment> recent = courseIds.isEmpty()
                 ? List.of()
@@ -76,6 +80,7 @@ public class InstructorDashboardService {
                 total, published, draft, archived,
                 totalEnrollments, totalReviews,
                 Math.round(averageRating * 10.0) / 10.0,
+                totalRevenue,
                 recentItems
         );
     }

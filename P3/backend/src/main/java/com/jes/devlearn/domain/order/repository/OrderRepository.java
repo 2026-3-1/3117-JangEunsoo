@@ -23,12 +23,4 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT o FROM Order o WHERE (:status IS NULL OR o.status = :status)")
     Page<Order> findAllForAdmin(@Param("status") OrderStatus status, Pageable pageable);
-
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status IN ('PAID', 'PARTIAL_REFUNDED', 'REFUNDED')")
-    long sumGrossRevenue();
-
-    @Query("SELECT COALESCE(SUM(o.refundedAmount), 0) FROM Order o")
-    long sumRefundedAmount();
-
-    long countByStatus(OrderStatus status);
 }
