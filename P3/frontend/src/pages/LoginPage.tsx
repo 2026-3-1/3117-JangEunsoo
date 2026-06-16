@@ -21,7 +21,13 @@ export default function LoginPage() {
       localStorage.setItem('refreshToken', refreshToken)
       const me = await fetchMe()
       await refresh()
-      navigate(me.role === 'INSTRUCTOR' ? '/instructor/dashboard' : '/courses')
+      navigate(
+        me.role === 'ADMIN'
+          ? '/admin'
+          : me.role === 'INSTRUCTOR'
+            ? '/instructor/dashboard'
+            : '/courses'
+      )
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message
