@@ -5,6 +5,7 @@ import { enroll, getMyEnrollments, type EnrollmentResponse } from '../api/enroll
 import { getReviews, createReview, deleteReview, type ReviewResponse } from '../api/reviews'
 import { addToCart, getCart } from '../api/cart'
 import NavBar from '../components/NavBar'
+import { useAuth } from '../context/useAuth'
 
 const DIFFICULTY_LABEL: Record<string, string> = {
   BEGINNER: '초급',
@@ -15,6 +16,7 @@ const DIFFICULTY_LABEL: Record<string, string> = {
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { userId, role } = useAuth()
 
   const [course, setCourse] = useState<CourseDetailResponse | null>(null)
   const [enrollment, setEnrollment] = useState<EnrollmentResponse | null>(null)
@@ -157,6 +159,8 @@ export default function CourseDetailPage() {
   }
 
   const isFree = (course.price ?? 0) === 0
+  // 이 강의의 강사 본인이거나 관리자면 수강 없이도 Q&A 관리 가능
+  const isManager = role === 'ADMIN' || (course.instructorId != null && course.instructorId === userId)
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -197,7 +201,32 @@ export default function CourseDetailPage() {
 
           {actionMsg && <p className="text-sm text-emerald-400">{actionMsg}</p>}
 
-          {enrollment ? (
+          {isManager && !enrollment ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-300">
+                <span>★</span>
+                <span className="text-sm font-medium">
+                  {role === 'ADMIN' ? '관리자 — 강의 Q&A 관리' : '내가 담당하는 강의입니다'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/courses/${course.id}/qna`)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-medium transition-colors"
+                >
+                  Q&amp;A 관리
+                </button>
+                {role !== 'ADMIN' && (
+                  <button
+                    onClick={() => navigate(`/instructor/courses/${course.id}/edit`)}
+                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm font-medium transition-colors"
+                  >
+                    강의 편집
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : enrollment ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-green-400">
                 <span>✓</span>

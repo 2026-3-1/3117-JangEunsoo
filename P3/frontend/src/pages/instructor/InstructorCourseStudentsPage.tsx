@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import NavBar from '../../components/NavBar'
 import { instructorApi, type CourseStudents } from '../../api/instructor'
 
@@ -17,7 +17,17 @@ export default function InstructorCourseStudentsPage() {
     <div className="min-h-screen bg-gray-950 text-gray-200">
       <NavBar />
       <div className="max-w-4xl mx-auto px-6 py-10">
-        <h1 className="text-2xl font-bold text-white mb-6">수강생 관리</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-white">수강생 관리</h1>
+          {id && (
+            <Link
+              to={`/courses/${id}/qna`}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium text-white"
+            >
+              강의 Q&amp;A 관리
+            </Link>
+          )}
+        </div>
 
         {error && <p className="text-red-400 mb-4">{error}</p>}
 
